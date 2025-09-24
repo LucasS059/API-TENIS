@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="pt-br" class="h-100" data-bs-theme="auto">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TENIS</title>
+  <link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/cover/" />
+  <script src="/assets/js/color-modes.js"></script>
+  <link href="/assets/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/cover.css" rel="stylesheet" />
+
+</head>
+
+<body class="d-flex text-center text-bg-dark">
+  <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <main class="px-3 my-4">
+      <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-outline-warning me-2" id="btnReiniciar">Configurar/Reiniciar Partida</button>
+      </div>
+      <!-- Modal de Configuração Inicial -->
+      <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="configModalLabel">Configuração da Partida</h5>
+            </div>
+            <div class="modal-body">
+              <form id="configForm">
+                <div class="mb-3">
+                  <label for="player1" class="form-label">Nome do Jogador 1</label>
+                  <input type="text" class="form-control" id="player1" value="Peter" required>
+                </div>
+                <div class="mb-3">
+                  <label for="player2" class="form-label">Nome do Jogador 2</label>
+                  <input type="text" class="form-control" id="player2" value="Marcelo" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Qual jogador será avaliado?</label>
+                  <select class="form-select" id="jogadorAvaliado">
+                    <option value="player1">Jogador 1</option>
+                    <option value="player2">Jogador 2</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Quantidade de Sets</label>
+                  <select class="form-select" id="numSets">
+                    <option value="3">Melhor de 3</option>
+                    <option value="5">Melhor de 5</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Iniciar Partida</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Confirmação -->
+      <div id="confirmacao-sucesso" class="alert alert-success text-center"
+        style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:9999; width:350px;">
+        <span id="mensagem-confirmacao">Registrado com sucesso!</span>
+        <button id="btnNovaPartida" class="btn btn-primary mt-2" style="display:none;">Iniciar Nova Partida</button>
+      </div>
+      <div class="placar">
+        <div class="d-flex justify-content-center mb-2">
+          <!-- Botão removido: Trocar Jogador Avaliado -->
+        </div>
+        <div id="tiebreak-placar" style="display:none; margin-bottom:10px;">
+          <div class="alert alert-light text-center" style="font-size:1.2em; border: 2px solid #ffffff;">
+            <strong>Tie-break!</strong> <br>
+            <span id="tbJogadorALabel">Jogador A</span>: <span id="tbJogadorA">0</span> &nbsp;|&nbsp; <span
+              id="tbJogadorBLabel">Jogador B</span>: <span id="tbJogadorB">0</span>
+          </div>
+        </div>
+        <table class="table table-striped table-bordered table-hover table-header-fixed table-condensed"
+          id="placarPrincipal">
+          <thead>
+            <tr id="placarHeader">
+              <td>Jogador</td>
+              <!-- Sets serão inseridos dinamicamente aqui -->
+              <td id="gameHeader">Game</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="placarJogadorA">
+              <td id="nomeJogadorA">Jogador A <span id="saqueJogadorA"></span></td>
+              <!-- Sets serão inseridos dinamicamente aqui -->
+              <td id="gameJogadorA">0</td>
+            </tr>
+            <tr id="placarJogadorB">
+              <td id="nomeJogadorB">Jogador B <span id="saqueJogadorB"></span></td>
+              <!-- Sets serão inseridos dinamicamente aqui -->
+              <td id="gameJogadorB">0</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table table-striped table-bordered table-header-fixed table-condensed" id="sample_1">
+          <thead>
+            <tr>
+              <td width="50%" id="miniPlacarJogadorA">Jogador A<span id="miniAvaliacaoJogadorA"></span></td>
+              <td id="miniPlacarJogadorB">Jogador B <span id="miniAvaliacaoJogadorB"></span></td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="d-grid">
+                  <button class="btn btn-primary" id="btnPontoJogadorA">Ponto <span id="placarBtnJogadorA">Jogador
+                      A</span></button>
+                </div>
+              </td>
+              <td>
+                <div class="d-grid"><button class="btn btn-primary" id="btnPontoJogadorB">Ponto <span
+                      id="placarBtnJogadorB">Jogador B</span></button></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal -->
+      <!-- Modal Completo -->
+      <div class="modal fade" id="meuModal" tabindex="-1" aria-labelledby="meuModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="meuModalLabel">Avaliação do Ponto</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+
+              <!-- 1. Tipo de Saque -->
+              <div class="mb-4">
+                <h3 class="text-center">Este ponto começou com qual saque?</h3>
+                <div class="row justify-content-center mt-2">
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm" data-secao="tipoSaque"
+                      data-valor="First Serve">First Serve</button></div>
+                  <div class="col-auto mb-2"><button class="btn btn-primary btn-sm" data-secao="tipoSaque"
+                      data-valor="Second Serve">Second Serve</button></div>
+                </div>
+              </div>
+              <hr />
+
+              <!-- 2. Como o ponto foi ganho/perdido -->
+              <div class="mb-4">
+                <h3 class="text-center" style="color:#ff0000;">How was the point won or lost</h3>
+                <div class="row justify-content-center mt-2">
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="resultadoPonto" data-valor="Ace">Ace</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="resultadoPonto"
+                    data-valor="Double Fault">Double Fault</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="resultadoPonto"
+                    data-valor="Winner">Winner</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="resultadoPonto"
+                    data-valor="Unforced Error">Unforced Error</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="resultadoPonto"
+                    data-valor="Forced Error">Forced Error</button>
+                </div>
+                <hr />
+                <h3 class="text-center" style="color:#008000;">How did the player win the point?</h3>
+                <div class="row justify-content-center mt-2">
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="playerPonto" data-valor="Ace">Ace</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="playerPonto" data-valor="Double Fault">Double
+                    Fault</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="playerPonto"
+                    data-valor="Winner">Winner</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="playerPonto"
+                    data-valor="Unforced Error">Unforced Error</button>
+                  <button class="btn btn-secondary btn-sm m-1" data-secao="playerPonto" data-valor="Forced Error">Forced
+                    Error</button>
+                </div>
+              </div>
+              <hr />
+
+              <!-- 3. Golpe realizado -->
+              <div class="mb-4">
+                <h3 class="text-center">Golpe realizado pelo jogador</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="golpe" data-valor="Forehand">Forehand</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="golpe" data-valor="Backhand">Backhand</button>
+              </div>
+              <hr />
+
+              <!-- 4. Tipo de Shot -->
+              <div class="mb-4">
+                <h3 class="text-center">Type of Shot</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Regular">Regular</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Passing">Passing</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot"
+                  data-valor="Approach">Approach</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Slice">Slice</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Volley">Volley</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Drop Shot">Drop
+                  Shot</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot" data-valor="Lob">Lob</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="tipoShot"
+                  data-valor="Overhead">Overhead</button>
+              </div>
+              <hr />
+
+              <!-- 5. Shot Location -->
+              <div class="mb-4">
+                <h3 class="text-center">Shot Location</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="shotLocation" data-valor="Cross Court">Cross
+                  Court</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="shotLocation"
+                  data-valor="Middle">Middle</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="shotLocation" data-valor="Down the Line">Down
+                  the Line</button>
+              </div>
+              <hr />
+
+              <!-- 6. Rally Length -->
+              <div class="mb-4">
+                <h3 class="text-center">Rally length</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="0">0</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="1">1</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="2">2</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="3">3</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="4">4</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="5">5</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="6">6</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="7">7</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="rallyLength" data-valor="8+">8+</button>
+              </div>
+              <hr />
+              <!-- 7. Ritual e Comportamento -->
+              <div class="mb-4">
+                <h3>1. Ritual e Rotina</h3>
+                <button class="btn btn-success btn-sm m-1 w-50" data-secao="ritual" data-valor="Toalha entre pontos">Ir
+                  à toalha entre pontos</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Demorar entre pontos">Demorar excessivamente entre pontos</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Trocar raquete mão não dominante">Trocar a raquete para a mão não dominante</button>
+                <button class="btn btn-warning btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Mantém raquete dominante">Mantém a raquete na mão dominante</button>
+                <button class="btn btn-success btn-sm m-1 w-50" data-secao="ritual" data-valor="Ritual pré-ponto">Ritual
+                  pré-ponto (quicar bola, ajeitar cordas)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Gestos desequilíbrio">Gestos de desequilíbrio ou fraqueza</button>
+                <button class="btn btn-success btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Respiração profunda">Respiração profunda pelo nariz</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="ritual"
+                  data-valor="Respiração ofegante">Respiração ofegante pela boca</button>
+              </div>
+              <hr />
+
+              <!-- 8. Linguagem Corporal -->
+              <div class="mb-4">
+                <h3>2. Linguagem Corporal</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Postura ereta">Postura ereta, olhar firme, pernas e pés ativados</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Postura caída">Postura corporal caída (cabeça baixa, ombros curvados)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Sorrisos relaxados">Pequenos sorrisos, relaxamento facial e da testa</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Olhar desviado">Desviar o olhar da quadra / boca, face e testa franzidos</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Ativação corporal">Ativação corporal adequada (saltos, quicar no lugar, energia nos pés e
+                  braços)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="linguagemCorporal"
+                  data-valor="Postura passiva">Postura passiva/sem energia (pés plantados, ombros baixos,
+                  desanimado)</button>
+              </div>
+              <hr />
+
+              <!-- 9. Expressão Emocional -->
+              <div class="mb-4">
+                <h3>3. Expressão Emocional</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional"
+                  data-valor="Vibração positiva">Vibração positiva (comemorar, punho cerrado, grito de incentivo,
+                  etc)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional"
+                  data-valor="Jogar raquete">Jogar a raquete no chão / chutar objetos / xingar</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional"
+                  data-valor="Expressão equilibrada">Expressões equilibradas após os erros</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional"
+                  data-valor="Movimentos bruscos">Movimentos bruscos ou depressivos após os erros</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional" data-valor="Aplauso">Aplauso /
+                  reconhecimento ao adversário (Fair Play)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="emocional"
+                  data-valor="Discussão hostil">Discussão hostil com o adversário</button>
+              </div>
+              <hr />
+
+              <!-- 10. Monólogo -->
+              <div class="mb-4">
+                <h3>4. Monólogo</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="monologo" data-valor="Positivo">Monólogo
+                  positivo (“vamos!”, “boa!”, etc)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="monologo" data-valor="Negativo">Monólogo
+                  negativo (xingamentos, críticas, auto cobrança, etc)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="monologo"
+                  data-valor="Correção negativa">Auto correções negativas (verbalizar)</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="monologo"
+                  data-valor="Ausência correção">Jogar a raquete no chão / chutar objetos / xingar</button>
+              </div>
+              <hr />
+
+              <!-- 11. Auto Análise Técnica -->
+              <div class="mb-4">
+                <h3>5. Auto Análise Técnica</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="analiseTecnica"
+                  data-valor="Correção técnica">Correção técnica por meio da repetição de um golpe "sem bola"</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="analiseTecnica"
+                  data-valor="Ausência correção">Ausência de correção técnica após o erro</button>
+              </div>
+              <hr />
+
+              <!-- 12. Ápice de Explosão Emocional -->
+              <div class="mb-4">
+                <h3>6. Ápice de Explosão Emocional</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="apiceEmocional"
+                  data-valor="Extravasar">Extravasar com gritos e gestos, sem xingamentos</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="apiceEmocional"
+                  data-valor="Comportamento autolesivo">Comportamento autolesivo (bater, morder, puxar cabelo,
+                  etc)</button>
+              </div>
+              <hr />
+
+              <!-- 13. Reação ao Erro -->
+              <div class="mb-4">
+                <h3>7. Reação ao Erro</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Indiferença construtiva">Indiferença construtiva frente ao erro</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro" data-valor="Apatia">Apatia
+                  após o erro</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Expressão conforme regras">Expressão após a frustração nos conformes</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Expressão contra regras">Expressão após a frustração contra os conformes</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Sorrir leveza">Sorrir com leveza e aceitação</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Sorrir ironia">Sorrir com ironia e desprezo</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Manter foco visual">Manter o foco visual em estímulos dentro de quadra</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="reacaoErro"
+                  data-valor="Olhar fora quadra">Olhar para estímulos fora da quadra</button>
+              </div>
+              <hr />
+
+              <!-- 14. Ritmo Entre Pontos -->
+              <div class="mb-4">
+                <h3>8. Ritmo Entre Pontos</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="ritmo" data-valor="Desatento">Desatento, perde
+                  tempo, dispersa foco</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="ritmo" data-valor="Equilibrado">Equilibrado,
+                  ritmo controlado</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="ritmo" data-valor="Acelerado">Acelerado, rápido
+                  demais</button>
+              </div>
+              <hr />
+
+              <!-- 15. Presença de Gemidos -->
+              <div class="mb-4">
+                <h3>9. Presença de Gemidos</h3>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="gemidos" data-valor="Ausência">Ausência de
+                  gemidos ou aleatórios</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="gemidos" data-valor="Consistentes">Gemidos
+                  consistentes (ritmo, intensidade)</button>
+                <button class="btn btn-secondary btn-sm m-1" data-secao="gemidos" data-valor="Excessivos">Gemidos
+                  excessivamente altos e desproporcionais</button>
+              </div>
+              <hr />
+
+              <!-- 16. Comportamento ao virar de lado e finalizar SET -->
+              <div class="mb-4">
+                <h3>10. Comportamento na virada de lado</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Ritual concentração">Ritual de concentração</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada" data-valor="Jogar raquete">Jogar a
+                  raquete no chão / xingar</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Hidratação consistente">Hidratação consistente</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Ausência hidratação">Ausência de hidratação</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Nutrição consistente">Nutrição consistente</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Ausência nutrição">Ausência de nutrição</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Suplementação consistente">Suplementação consistente</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Ausência suplementação">Ausência de suplementação</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Solicitação fisioterapia">Solicitação de fisioterapia em quadra</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="virada"
+                  data-valor="Fisioterapia fuga">Solicitação de fisioterapia como recurso de fuga</button>
+              </div>
+              <hr />
+
+              <!-- 17. Arbitragem -->
+              <div class="mb-4">
+                <h3>12. Arbitragem</h3>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="arbitragem"
+                  data-valor="Solicitou árbitro">Solicitou o árbitro de forma apropriada</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="arbitragem"
+                  data-valor="Adversário chamou">Adversário chamou o árbitro</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="arbitragem"
+                  data-valor="Decisão favorável">Decisão favorável do árbitro</button>
+                <button class="btn btn-secondary btn-sm m-1 w-50" data-secao="arbitragem"
+                  data-valor="Decisão desfavorável">Decisão desfavorável do árbitro</button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="btnSalvarModal">Salvar</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Fim Modal Completo -->
+
+    </main>
+    <script src="../assets/dist/js/bootstrap.bundle.min.js" class="astro-vvvwv3sm"></script>
+    <script src="../script.js"></script>
+  </div>
+</body>
+
+</html>

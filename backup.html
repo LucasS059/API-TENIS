@@ -1,17 +1,13 @@
 <!doctype html>
-<html lang="en" class="h-100" data-bs-theme="auto">
+<html lang="pt-br" class="h-100" data-bs-theme="auto">
 
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="" />
-  <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors" />
-  <meta name="generator" content="Astro v5.13.2" />
   <title>TENIS</title>
   <link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/cover/" />
   <script src="../assets/js/color-modes.js"></script>
   <link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <meta name="theme-color" content="#712cf9" />
   <link href="cover.css" rel="stylesheet" />
 
 </head>
@@ -153,6 +149,22 @@
 
               <div class="mb-4">
                 <h3 class="text-center" style="color:#ff0000;">How was the point won or lost</h3>
+                <div class="row justify-content-center mt-2">
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
+                      style="min-width:80px;max-width:120px;">Ace</button></div>
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
+                      style="min-width:80px;max-width:120px;">Double Fault</button></div>
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
+                      style="min-width:80px;max-width:120px;">Winner</button></div>
+                </div>
+                <div class="row justify-content-center mt-2">
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
+                      style="min-width:80px;max-width:120px;">Unforced error</button></div>
+                  <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
+                      style="min-width:80px;max-width:120px;">Forced error</button></div>
+                </div>
+                <hr />
+                <h3 class="text-center" style="color:#008000;">How did the player win the point?</h3>
                 <div class="row justify-content-center mt-2">
                   <div class="col-auto mb-2"><button class="btn btn-secondary btn-sm px-2 py-1"
                       style="min-width:80px;max-width:120px;">Ace</button></div>
@@ -641,11 +653,15 @@
         e.preventDefault();
         if (vencedor) return desabilitarBotoesPontuacao();
 
+        // Jogador A faz o ponto
+        jogadorAtual = 'Jogador A';
+
+        // Se o jogador avaliado for player1 → abre modal para avaliar ponto ganho
         if (jogadorAvaliado === 'player1') {
-          jogadorAtual = 'Jogador A';
           abrirModal('meuModal');
         } else {
-          registrarPonto('Jogador A');
+          // Caso contrário → jogador avaliado perdeu o ponto, abre modal também
+          abrirModal('meuModal');
         }
       };
 
@@ -653,13 +669,18 @@
         e.preventDefault();
         if (vencedor) return desabilitarBotoesPontuacao();
 
+        // Jogador B faz o ponto
+        jogadorAtual = 'Jogador B';
+
+        // Se o jogador avaliado for player2 → abre modal para avaliar ponto ganho
         if (jogadorAvaliado === 'player2') {
-          jogadorAtual = 'Jogador B';
           abrirModal('meuModal');
         } else {
-          registrarPonto('Jogador B');
+          // Caso contrário → jogador avaliado perdeu o ponto, abre modal também
+          abrirModal('meuModal');
         }
       };
+
 
       // ========================
       // MODAL DE PERGUNTAS
@@ -669,17 +690,15 @@
 
         setTimeout(() => document.getElementById('btnReiniciar')?.focus(), 500);
 
-        if (
-          (jogadorAtual === 'Jogador A' && jogadorAvaliado === 'player1') ||
-          (jogadorAtual === 'Jogador B' && jogadorAvaliado === 'player2')
-        ) {
-          registrarPonto(jogadorAtual);
+        // Sempre registra o ponto de quem fez (jogadorAtual)
+        registrarPonto(jogadorAtual);
 
-          const confirmacao = document.getElementById('confirmacao-sucesso');
-          confirmacao.style.display = 'block';
-          setTimeout(() => { if (!vencedor) confirmacao.style.display = 'none'; }, 2000);
-        }
+        // Exibe a confirmação rápida
+        const confirmacao = document.getElementById('confirmacao-sucesso');
+        confirmacao.style.display = 'block';
+        setTimeout(() => { if (!vencedor) confirmacao.style.display = 'none'; }, 2000);
       });
+
 
       function registrarPonto(jogador) {
         // Bloqueia se já existe vencedor ou acabou o número de sets
