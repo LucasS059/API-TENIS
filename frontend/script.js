@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-
     // ========================
     // 1. STATE - Gerencia o estado do jogo
     // ========================
@@ -67,6 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
             gameJogadorB: document.getElementById('gameJogadorB'),
             confirmacaoSucesso: document.getElementById('confirmacao-sucesso'),
             mensagemConfirmacao: document.getElementById('mensagem-confirmacao'),
+            tiebreakPlacar: document.getElementById('tiebreak-placar'),
+            tbJogadorA: document.getElementById('tbJogadorA'),
+            tbJogadorB: document.getElementById('tbJogadorB'),
+            tbJogadorALabel: document.getElementById('tbJogadorALabel'),
+            tbJogadorBLabel: document.getElementById('tbJogadorBLabel'),
+            placarPrincipal: document.getElementById('placarPrincipal'),
+            saqueJogadorA: document.getElementById('saqueJogadorA'),
+            saqueJogadorB: document.getElementById('saqueJogadorB'),
         },
 
         abrirModal(modal) {
@@ -130,53 +137,83 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizarPlacar(partida) {
             if (!partida) return;
 
-            const { playerAName, playerBName, numSets, jogadorAvaliado } = partida.configuracao;
+            const { playerAName, playerBName, jogadorAvaliado } = partida.configuracao;
             this.elements.nomeJogadorA.innerHTML = `${playerAName}${jogadorAvaliado === 'player1' ? ' <span style="color:yellow;font-weight:bold;">*</span>' : ''}`;
             this.elements.nomeJogadorB.innerHTML = `${playerBName}${jogadorAvaliado === 'player2' ? ' <span style="color:yellow;font-weight:bold;">*</span>' : ''}`;
             document.getElementById('placarBtnJogadorA').textContent = playerAName;
             document.getElementById('placarBtnJogadorB').textContent = playerBName;
 
+            // Atualiza os sets
             partida.sets.forEach((set, i) => {
                 const setCellA = document.getElementById(`set${i + 1}JogadorA`);
                 const setCellB = document.getElementById(`set${i + 1}JogadorB`);
                 if (setCellA && setCellB) {
                     const gamesA = set.games.filter(g => g.vencedor === playerAName).length;
                     const gamesB = set.games.filter(g => g.vencedor === playerBName).length;
-                    setCellA.textContent = gamesA;
-                    setCellB.textContent = gamesB;
+
+                    // Verifica se o set foi vencido por tie-break
+                    if (set.vencedor && set.games.length > 0 && set.games[set.games.length - 1].isTiebreak) {
+                        const ultimoGame = set.games[set.games.length - 1];
+                        const tbA = ultimoGame.placarGame.player1;
+                        const tbB = ultimoGame.placarGame.player2;
+                        setCellA.textContent = `${gamesA} (TB: ${tbA})`;
+                        setCellB.textContent = `${gamesB} (TB: ${tbB})`;
+                    } else {
+                        setCellA.textContent = gamesA;
+                        setCellB.textContent = gamesB;
+                    }
                 }
             });
 
+            // Atualiza o game atual e gerencia a visibilidade do placar de tie-break
             const setAtual = partida.sets[partida.sets.length - 1];
             if (setAtual && setAtual.games.length > 0) {
                 const gameAtual = setAtual.games[setAtual.games.length - 1];
+                
+                // Lógica para mostrar o sacador
+                this.elements.saqueJogadorA.textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
+                this.elements.saqueJogadorB.textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
 
-                // Lógica para exibir a pontuação do game atual
-                if (gameAtual.vencedor) {
-                    this.elements.gameJogadorA.textContent = '0';
-                    this.elements.gameJogadorB.textContent = '0';
-                } else if (gameAtual.isTiebreak) {
-                    this.elements.gameJogadorA.textContent = gameAtual.placarGame.player1;
-                    this.elements.gameJogadorB.textContent = gameAtual.placarGame.player2;
+                if (gameAtual.isTiebreak) {
+                    this.elements.tiebreakPlacar.style.display = 'block';
+                    this.elements.placarPrincipal.style.display = 'none';
+                    this.elements.tbJogadorA.textContent = gameAtual.placarGame.player1;
+                    this.elements.tbJogadorB.textContent = gameAtual.placarGame.player2;
+
+                    // Nomes dos jogadores no placar do tie-break
+                    this.elements.tbJogadorALabel.textContent = playerAName;
+                    this.elements.tbJogadorBLabel.textContent = playerBName;
+
                 } else {
-                    const placarA = gameAtual.placarGame.player1;
-                    const placarB = gameAtual.placarGame.player2;
-                    
-                    if (placarA === 4 && placarB === 4) {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = '40';
-                    } else if (placarA === 5 && placarB === 4) {
-                        this.elements.gameJogadorA.textContent = 'A';
-                        this.elements.gameJogadorB.textContent = '40';
-                    } else if (placarA === 4 && placarB === 5) {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = 'A';
+                    this.elements.tiebreakPlacar.style.display = 'none';
+                    this.elements.placarPrincipal.style.display = 'table';
+                    if (gameAtual.vencedor) {
+                        this.elements.gameJogadorA.textContent = '0';
+                        this.elements.gameJogadorB.textContent = '0';
                     } else {
-                        this.elements.gameJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
-                        this.elements.gameJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
+                        const placarA = gameAtual.placarGame.player1;
+                        const placarB = gameAtual.placarGame.player2;
+                        
+                        if (placarA >= 3 && placarB >= 3) {
+                            if (placarA === placarB) {
+                                this.elements.gameJogadorA.textContent = '40';
+                                this.elements.gameJogadorB.textContent = '40';
+                            } else if (placarA > placarB) {
+                                this.elements.gameJogadorA.textContent = 'A';
+                                this.elements.gameJogadorB.textContent = '40';
+                            } else {
+                                this.elements.gameJogadorA.textContent = '40';
+                                this.elements.gameJogadorB.textContent = 'A';
+                            }
+                        } else {
+                            this.elements.gameJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
+                            this.elements.gameJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
+                        }
                     }
                 }
             } else {
+                this.elements.tiebreakPlacar.style.display = 'none';
+                this.elements.placarPrincipal.style.display = 'table';
                 this.elements.gameJogadorA.textContent = '0';
                 this.elements.gameJogadorB.textContent = '0';
             }
@@ -239,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             ui.alternarBotoesDePonto(false);
             
-            // Adicionando um listener para os botões do modal de perguntas
             const modalButtons = document.querySelectorAll('#meuModal .modal-body button');
             modalButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
