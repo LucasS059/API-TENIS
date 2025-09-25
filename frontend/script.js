@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setIDParaComportamento: null,
         ultimoPontoModalRespostas: null,
         ultimoSetModalRespostas: null,
-        chartInstances: {}
-
     };
 
     const PONTUACAO_TENIS = ['0', '15', '30', '40'];
@@ -52,10 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarComportamentoSet(partidaId, setId, modalRespostasSet) {
             return this.request(`/api/partida/${partidaId}/set/${setId}/comportamento`, 'POST', { modalRespostasSet });
         },
-
-        obterRelatorios() {
-            return this.request('/api/relatorios', 'GET');
-        }
     };
 
     // ========================
@@ -68,13 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setModal: new bootstrap.Modal(document.getElementById('setModal')),
             configForm: document.getElementById('configForm'),
             btnReiniciar: document.getElementById('btnReiniciar'),
-            btnRelatorios: document.getElementById('btnRelatorios'),
             btnPontoJogadorA: document.getElementById('btnPontoJogadorA'),
             btnPontoJogadorB: document.getElementById('btnPontoJogadorB'),
             btnSalvarModal: document.getElementById('btnSalvarModal'),
             btnSalvarSet: document.getElementById('btnSalvarSet'),
             placarContainer: document.querySelector('.placar'),
-            relatoriosContainer: document.getElementById('relatoriosContainer'),
             placarHeader: document.getElementById('placarHeader'),
             placarJogadorA: document.getElementById('placarJogadorA'),
             placarJogadorB: document.getElementById('placarJogadorB'),
@@ -111,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 5000);
         },
 
-
         resetarModalDePonto() {
             document.querySelectorAll('#meuModal .modal-body button').forEach(btn => {
                 btn.classList.remove('active', 'btn-success');
@@ -135,19 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
         alternarVisualizacaoPlacar(mostrarPlacar) {
             const placar = document.querySelector(".placar-container");
             const botoes = document.querySelector(".row.mt-4");
-            const relatorios = document.getElementById("relatoriosContainer");
 
             if (mostrarPlacar) {
                 placar.style.display = "block";
                 botoes.style.display = "flex";
-                relatorios.style.display = "none";
             } else {
                 placar.style.display = "none";
                 botoes.style.display = "none";
-                relatorios.style.display = "block";
             }
         },
-
 
         criarTabelaPlacar(numSets) {
             const headerRow = this.elements.placarHeader;
@@ -215,10 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         setCellA.textContent = gamesA;
                         setCellB.textContent = gamesB;
                     }
-
                 }
             });
-
 
             const setAnterior = partida.sets[partida.sets.length - 2];
             if (setAnterior && setAnterior.vencedor && !setAnterior.modalRespostasSet) {
@@ -295,9 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 this.alternarBotoesDePonto(true);
-                this.elements.btnRelatorios.style.display = 'none';
             }
-
         }
     };
 
@@ -406,110 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        async carregarRelatorios() {
-            const partidas = await api.obterRelatorios();
-            console.log('DADOS RECEBIDOS NO FRONTEND:', partidas);
-
-            if (partidas) {
-                this.processarDadosRelatorio(partidas);
-            }
-        },
-
-        processarDadosRelatorio(partidas) {
-            const dadosProcessados = {
-                tipoPonto: {},
-                comportamentoSet: {},
-            };
-            const jogadorAvaliadoMap = {};
-
-            partidas.forEach(partida => {
-                const { jogadorAvaliado, playerAName, playerBName } = partida.configuracao;
-                const nomeJogadorAvaliado = (jogadorAvaliado === 'player1') ? playerAName : playerBName;
-                jogadorAvaliadoMap[partida._id] = nomeJogadorAvaliado;
-
-                partida.sets.forEach(set => {
-                    set.games.forEach(game => {
-                        game.pontos.forEach(ponto => {
-                            if (ponto.vencedor === nomeJogadorAvaliado && ponto.modalRespostas && ponto.modalRespostas.resultadoPonto) {
-                                ponto.modalRespostas.resultadoPonto.forEach(tipo => {
-                                    dadosProcessados.tipoPonto[tipo] = (dadosProcessados.tipoPonto[tipo] || 0) + 1;
-                                });
-                            }
-                        });
-                    });
-
-                    if (set.modalRespostasSet && set.vencedor === nomeJogadorAvaliado) {
-                        set.modalRespostasSet.comportamentoSet.forEach(comportamento => {
-                            dadosProcessados.comportamentoSet[comportamento] = (dadosProcessados.comportamentoSet[comportamento] || 0) + 1;
-                        });
-                    }
-                });
-            });
-            console.log('DADOS PROCESSADOS PARA OS GRÁFICOS:', dadosProcessados);
-
-            this.desenharGraficoTipoPonto(dadosProcessados.tipoPonto);
-            this.desenharGraficoComportamentoSet(dadosProcessados.comportamentoSet);
-        },
-
-        desenharGraficoTipoPonto(dados) {
-            const canvasId = 'tipoPontoChart';
-            if (appState.chartInstances[canvasId]) {
-                appState.chartInstances[canvasId].destroy();
-            }
-
-            const ctx = document.getElementById(canvasId).getContext('2d');
-
-            appState.chartInstances[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(dados),
-                    datasets: [{
-                        label: 'Frequência do Tipo de Ponto (Jogador Avaliado)',
-                        data: Object.values(dados),
-                        backgroundColor: 'rgba(255, 206, 86, 0.8)',
-                        borderColor: 'rgba(255, 206, 86, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
-                    plugins: { legend: { labels: { color: '#fff' } } }
-                }
-            });
-        },
-
-        desenharGraficoComportamentoSet(dados) {
-            const canvasId = 'comportamentoSetChart';
-            if (appState.chartInstances[canvasId]) {
-                appState.chartInstances[canvasId].destroy();
-            }
-
-            const ctx = document.getElementById(canvasId).getContext('2d');
-
-            appState.chartInstances[canvasId] = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(dados),
-                    datasets: [{
-                        label: 'Comportamento por Set (Jogador Avaliado)',
-                        data: Object.values(dados),
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)',
-                            'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)',
-                            'rgba(255, 159, 64, 0.8)', 'rgba(201, 203, 207, 0.8)'
-                        ],
-                        borderColor: '#444',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: '#fff' } } }
-                }
-            });
-        },
-
         init() {
             ui.alternarBotoesDePonto(false);
 
@@ -589,12 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.resetarModalDeSet();
                 this.preencherModalDeSet(appState.ultimoSetModalRespostas);
             });
-
-            ui.elements.btnRelatorios.addEventListener('click', function () {
-                ui.alternarVisualizacaoPlacar(false);
-                app.carregarRelatorios();
-            });
-
         }
     };
 
