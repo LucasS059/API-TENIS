@@ -24,81 +24,83 @@
         <span id="mensagem-confirmacao">Registrado com sucesso!</span>
         <button id="btnNovaPartida" class="btn btn-primary mt-2" style="display:none;">Iniciar Nova Partida</button>
       </div>
+      <div class="placar">
+        <div class="placar-container my-4">
+          <h1 class="my-4">Placar da Partida</h1>
 
-      <div class="placar-container my-4">
-        <h1 class="my-4">Placar da Partida</h1>
-        
-        <div id="tiebreak-placar" style="display:none;" class="alert alert-light text-center py-2 mb-3">
-          <strong>Tie-break!</strong> <br>
-          <span id="tbJogadorALabel">Jogador A</span>: <span id="tbJogadorA">0</span> |
-          <span id="tbJogadorBLabel">Jogador B</span>: <span id="tbJogadorB">0</span>
+          <div id="tiebreak-placar" style="display:none;" class="alert alert-light text-center py-2 mb-3">
+            <strong>Tie-break!</strong> <br>
+            <span id="tbJogadorALabel">Jogador A</span>: <span id="tbJogadorA">0</span> |
+            <span id="tbJogadorBLabel">Jogador B</span>: <span id="tbJogadorB">0</span>
+          </div>
+
+          <table class="table table-striped table-bordered table-hover table-header-fixed table-condensed"
+            id="placarPrincipal">
+            <thead>
+              <tr id="placarHeader">
+                <th>Jogador</th>
+                <th>Set 1</th>
+                <th>Set 2</th>
+                <th>Set 3</th>
+                <th id="gameHeader">Game</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="placarJogadorA">
+                <td id="nomeJogadorA">Jogador A <span id="saqueJogadorA"></span></td>
+                <td class="set-score" data-set="1">0</td>
+                <td class="set-score" data-set="2">0</td>
+                <td class="set-score" data-set="3">0</td>
+                <td id="gameJogadorA">0</td>
+              </tr>
+              <tr id="placarJogadorB">
+                <td id="nomeJogadorB">Jogador B <span id="saqueJogadorB"></span></td>
+                <td class="set-score" data-set="1">0</td>
+                <td class="set-score" data-set="2">0</td>
+                <td class="set-score" data-set="3">0</td>
+                <td id="gameJogadorB">0</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <table class="table table-striped table-bordered table-hover table-header-fixed table-condensed"
-          id="placarPrincipal">
-          <thead>
-            <tr id="placarHeader">
-              <th>Jogador</th>
-              <th>Set 1</th>
-              <th>Set 2</th>
-              <th>Set 3</th>
-              <th id="gameHeader">Game</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr id="placarJogadorA">
-              <td id="nomeJogadorA">Jogador A <span id="saqueJogadorA"></span></td>
-              <td class="set-score" data-set="1">0</td>
-              <td class="set-score" data-set="2">0</td>
-              <td class="set-score" data-set="3">0</td>
-              <td id="gameJogadorA">0</td>
-            </tr>
-            <tr id="placarJogadorB">
-              <td id="nomeJogadorB">Jogador B <span id="saqueJogadorB"></span></td>
-              <td class="set-score" data-set="1">0</td>
-              <td class="set-score" data-set="2">0</td>
-              <td class="set-score" data-set="3">0</td>
-              <td id="gameJogadorB">0</td>
-            </tr>
-          </tbody>
-        </table>
 
         <div class="row mt-4">
           <div class="col-6">
-            <button class="btn btn-primary w-100" id="btnPontoJogadorA">Ponto <span
-                id="placarBtnJogadorA">Jogador A</span></button>
+            <button class="btn btn-primary w-100" id="btnPontoJogadorA">Ponto <span id="placarBtnJogadorA">Jogador
+                A</span></button>
           </div>
           <div class="col-6">
-            <button class="btn btn-primary w-100" id="btnPontoJogadorB">Ponto <span
-                id="placarBtnJogadorB">Jogador B</span></button>
+            <button class="btn btn-primary w-100" id="btnPontoJogadorB">Ponto <span id="placarBtnJogadorB">Jogador
+                B</span></button>
           </div>
         </div>
-      </div>
-      
-      <hr>
 
-      <div id="relatoriosContainer" class="mt-4" style="display:none;">
-        <h2 class="text-white">Relatórios da Partida</h2>
-        <div class="row">
-          <div class="col-12 col-md-6 mb-4">
-            <h5 class="text-white">Tipos de Ponto</h5>
-            <canvas id="tipoPontoChart"></canvas>
-          </div>
-          <div class="col-12 col-md-6 mb-4">
-            <h5 class="text-white">Comportamentos por Set</h5>
-            <canvas id="comportamentoSetChart"></canvas>
+        <hr>
+
+        <div id="relatoriosContainer" class="mt-4" style="display:none;">
+          <h2 class="text-white">Relatórios da Partida</h2>
+          <div class="row">
+            <div class="col-12 col-md-6 mb-4">
+              <h5 class="text-white">Tipos de Ponto</h5>
+              <canvas id="tipoPontoChart"></canvas>
+            </div>
+            <div class="col-12 col-md-6 mb-4">
+              <h5 class="text-white">Comportamentos por Set</h5>
+              <canvas id="comportamentoSetChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
 
     </main>
-    
+
     <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content text-bg-dark">
           <div class="modal-header">
             <h5 class="modal-title" id="configModalLabel">Configuração da Partida</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+              aria-label="Fechar"></button>
           </div>
           <div class="modal-body">
             <form id="configForm">
@@ -130,20 +132,23 @@
         </div>
       </div>
     </div>
-    
+
     <div class="modal fade" id="meuModal" tabindex="-1" aria-labelledby="meuModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content text-bg-dark">
           <div class="modal-header">
             <h5 class="modal-title w-100 text-center" id="meuModalLabel">Avaliação do Ponto</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+              aria-label="Fechar"></button>
           </div>
           <div class="modal-body text-center">
             <div class="mb-4 modal-section" data-secao="tipoSaque">
               <h4 class="section-title">Este ponto começou com qual saque?</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="tipoSaque" data-valor="First Serve">First Serve</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="tipoSaque" data-valor="Second Serve">Second Serve</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="tipoSaque" data-valor="First Serve">First
+                  Serve</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="tipoSaque" data-valor="Second Serve">Second
+                  Serve</button>
               </div>
             </div>
             <hr>
@@ -152,10 +157,14 @@
               <h4 class="section-title">How was the point won or lost</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
                 <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto" data-valor="Ace">Ace</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto" data-valor="Double Fault">Double Fault</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto" data-valor="Winner">Winner</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto" data-valor="Unforced Error">Unforced Error</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto" data-valor="Forced Error">Forced Error</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto"
+                  data-valor="Double Fault">Double Fault</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto"
+                  data-valor="Winner">Winner</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto"
+                  data-valor="Unforced Error">Unforced Error</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="resultadoPonto"
+                  data-valor="Forced Error">Forced Error</button>
               </div>
             </div>
             <hr>
@@ -174,12 +183,15 @@
               <div class="d-flex justify-content-center flex-wrap gap-2">
                 <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Regular">Regular</button>
                 <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Passing">Passing</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Approach">Approach</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot"
+                  data-valor="Approach">Approach</button>
                 <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Slice">Slice</button>
                 <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Volley">Volley</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Drop Shot">Drop Shot</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Drop Shot">Drop
+                  Shot</button>
                 <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Lob">Lob</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot" data-valor="Overhead">Overhead</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="tipoShot"
+                  data-valor="Overhead">Overhead</button>
               </div>
             </div>
             <hr>
@@ -187,9 +199,12 @@
             <div class="mb-4 modal-section" data-secao="shotLocation" data-multiselect="true">
               <h4 class="section-title">Shot Location</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation" data-valor="Cross Court">Cross Court</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation" data-valor="Middle">Middle</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation" data-valor="Down the Line">Down the Line</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation" data-valor="Cross Court">Cross
+                  Court</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation"
+                  data-valor="Middle">Middle</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="shotLocation" data-valor="Down the Line">Down
+                  the Line</button>
               </div>
             </div>
             <hr>
@@ -213,14 +228,22 @@
             <div class="mb-4 modal-section" data-secao="ritual" data-multiselect="true">
               <h4 class="section-title">1. Ritual e Rotina</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Toalha entre pontos">Ir à toalha entre pontos</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Demorar entre pontos">Demorar excessivamente entre pontos</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Trocar raquete mão não dominante">Trocar a raquete para a mão não dominante</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Mantém raquete dominante">Mantém a raquete na mão dominante</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Ritual pré-ponto">Ritual pré-ponto (quicar bola, ajeitar cordas)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Gestos desequilíbrio">Gestos de desequilíbrio ou fraqueza</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Respiração profunda">Respiração profunda pelo nariz</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Respiração ofegante">Respiração ofegante pela boca</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Toalha entre pontos">Ir à
+                  toalha entre pontos</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Demorar entre pontos">Demorar excessivamente entre pontos</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Trocar raquete mão não dominante">Trocar a raquete para a mão não dominante</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Mantém raquete dominante">Mantém a raquete na mão dominante</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual" data-valor="Ritual pré-ponto">Ritual
+                  pré-ponto (quicar bola, ajeitar cordas)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Gestos desequilíbrio">Gestos de desequilíbrio ou fraqueza</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Respiração profunda">Respiração profunda pelo nariz</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritual"
+                  data-valor="Respiração ofegante">Respiração ofegante pela boca</button>
               </div>
             </div>
             <hr>
@@ -228,12 +251,20 @@
             <div class="mb-4 modal-section" data-secao="linguagemCorporal" data-multiselect="true">
               <h4 class="section-title">2. Linguagem Corporal</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Postura ereta">Postura ereta, olhar firme, pernas e pés ativados</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Postura caída">Postura corporal caída (cabeça baixa, ombros curvados)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Sorrisos relaxados">Pequenos sorrisos, relaxamento facial e da testa</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Olhar desviado">Desviar o olhar da quadra / boca, face e testa franzidos</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Ativação corporal">Ativação corporal adequada (saltos, quicar no lugar, energia nos pés e braços)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal" data-valor="Postura passiva">Postura passiva/sem energia (pés plantados, ombros baixos, desanimado)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Postura ereta">Postura ereta, olhar firme, pernas e pés ativados</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Postura caída">Postura corporal caída (cabeça baixa, ombros curvados)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Sorrisos relaxados">Pequenos sorrisos, relaxamento facial e da testa</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Olhar desviado">Desviar o olhar da quadra / boca, face e testa franzidos</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Ativação corporal">Ativação corporal adequada (saltos, quicar no lugar, energia nos pés e
+                  braços)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="linguagemCorporal"
+                  data-valor="Postura passiva">Postura passiva/sem energia (pés plantados, ombros baixos,
+                  desanimado)</button>
               </div>
             </div>
             <hr>
@@ -241,12 +272,18 @@
             <div class="mb-4 modal-section" data-secao="emocional" data-multiselect="true">
               <h4 class="section-title">3. Expressão Emocional</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Vibração positiva">Vibração positiva (comemorar, punho cerrado, etc)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Jogar raquete">Jogar a raquete no chão / chutar objetos / xingar</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Expressão equilibrada">Expressões equilibradas após os erros</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Movimentos bruscos">Movimentos bruscos ou depressivos após os erros</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Aplauso">Aplauso / reconhecimento ao adversário (Fair Play)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Discussão hostil">Discussão hostil com o adversário</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional"
+                  data-valor="Vibração positiva">Vibração positiva (comemorar, punho cerrado, etc)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Jogar raquete">Jogar a
+                  raquete no chão / chutar objetos / xingar</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional"
+                  data-valor="Expressão equilibrada">Expressões equilibradas após os erros</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional"
+                  data-valor="Movimentos bruscos">Movimentos bruscos ou depressivos após os erros</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional" data-valor="Aplauso">Aplauso /
+                  reconhecimento ao adversário (Fair Play)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="emocional"
+                  data-valor="Discussão hostil">Discussão hostil com o adversário</button>
               </div>
             </div>
             <hr>
@@ -254,10 +291,14 @@
             <div class="mb-4 modal-section" data-secao="monologo" data-multiselect="true">
               <h4 class="section-title">4. Monólogo</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Positivo">Monólogo positivo (“vamos!”, “boa!”, etc)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Negativo">Monólogo negativo (xingamentos, críticas, auto cobrança, etc)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Correção negativa">Auto correções negativas (verbalizar)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Ausência correção">Ausência de correção verbal</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Positivo">Monólogo
+                  positivo (“vamos!”, “boa!”, etc)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Negativo">Monólogo
+                  negativo (xingamentos, críticas, auto cobrança, etc)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="monologo" data-valor="Correção negativa">Auto
+                  correções negativas (verbalizar)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="monologo"
+                  data-valor="Ausência correção">Ausência de correção verbal</button>
               </div>
             </div>
             <hr>
@@ -265,8 +306,10 @@
             <div class="mb-4 modal-section" data-secao="analiseTecnica" data-multiselect="true">
               <h4 class="section-title">5. Auto Análise Técnica</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="analiseTecnica" data-valor="Correção técnica">Correção técnica por meio da repetição de um golpe "sem bola"</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="analiseTecnica" data-valor="Ausência correção">Ausência de correção técnica após o erro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="analiseTecnica"
+                  data-valor="Correção técnica">Correção técnica por meio da repetição de um golpe "sem bola"</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="analiseTecnica"
+                  data-valor="Ausência correção">Ausência de correção técnica após o erro</button>
               </div>
             </div>
             <hr>
@@ -274,8 +317,11 @@
             <div class="mb-4 modal-section" data-secao="apiceEmocional" data-multiselect="true">
               <h4 class="section-title">6. Ápice de Explosão Emocional</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="apiceEmocional" data-valor="Extravasar">Extravasar com gritos e gestos, sem xingamentos</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="apiceEmocional" data-valor="Comportamento autolesivo">Comportamento autolesivo (bater, morder, puxar cabelo, etc)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="apiceEmocional"
+                  data-valor="Extravasar">Extravasar com gritos e gestos, sem xingamentos</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="apiceEmocional"
+                  data-valor="Comportamento autolesivo">Comportamento autolesivo (bater, morder, puxar cabelo,
+                  etc)</button>
               </div>
             </div>
             <hr>
@@ -283,14 +329,22 @@
             <div class="mb-4 modal-section" data-secao="reacaoErro" data-multiselect="true">
               <h4 class="section-title">7. Reação ao Erro</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Indiferença construtiva">Indiferença construtiva frente ao erro</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Apatia">Apatia após o erro</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Expressão conforme regras">Expressão após a frustração nos conformes</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Expressão contra regras">Expressão após a frustração contra os conformes</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Sorrir leveza">Sorrir com leveza e aceitação</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Sorrir ironia">Sorrir com ironia e desprezo</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Manter foco visual">Manter o foco visual em estímulos dentro de quadra</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Olhar fora quadra">Olhar para estímulos fora da quadra</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro"
+                  data-valor="Indiferença construtiva">Indiferença construtiva frente ao erro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Apatia">Apatia após o
+                  erro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro"
+                  data-valor="Expressão conforme regras">Expressão após a frustração nos conformes</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro"
+                  data-valor="Expressão contra regras">Expressão após a frustração contra os conformes</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Sorrir leveza">Sorrir
+                  com leveza e aceitação</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro" data-valor="Sorrir ironia">Sorrir
+                  com ironia e desprezo</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro"
+                  data-valor="Manter foco visual">Manter o foco visual em estímulos dentro de quadra</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="reacaoErro"
+                  data-valor="Olhar fora quadra">Olhar para estímulos fora da quadra</button>
               </div>
             </div>
             <hr>
@@ -298,9 +352,12 @@
             <div class="mb-4 modal-section" data-secao="ritmo">
               <h4 class="section-title">8. Ritmo Entre Pontos</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Desatento">Desatento, perde tempo, dispersa foco</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Equilibrado">Equilibrado, ritmo controlado</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Acelerado">Acelerado, rápido demais</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Desatento">Desatento, perde
+                  tempo, dispersa foco</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Equilibrado">Equilibrado,
+                  ritmo controlado</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="ritmo" data-valor="Acelerado">Acelerado, rápido
+                  demais</button>
               </div>
             </div>
             <hr>
@@ -308,9 +365,12 @@
             <div class="mb-4 modal-section" data-secao="gemidos">
               <h4 class="section-title">9. Presença de Gemidos</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Ausência">Ausência de gemidos ou aleatórios</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Consistentes">Gemidos consistentes (ritmo, intensidade)</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Excessivos">Gemidos excessivamente altos e desproporcionais</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Ausência">Ausência de
+                  gemidos ou aleatórios</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Consistentes">Gemidos
+                  consistentes (ritmo, intensidade)</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="gemidos" data-valor="Excessivos">Gemidos
+                  excessivamente altos e desproporcionais</button>
               </div>
             </div>
             <hr>
@@ -318,16 +378,26 @@
             <div class="mb-4 modal-section" data-secao="virada" data-multiselect="true">
               <h4 class="section-title">10. Comportamento na Virada de Lado</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ritual concentração">Ritual de concentração</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Jogar raquete">Jogar a raquete no chão / xingar</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Hidratação consistente">Hidratação consistente</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ausência hidratação">Ausência de hidratação</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Nutrição consistente">Nutrição consistente</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ausência nutrição">Ausência de nutrição</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Suplementação consistente">Suplementação consistente</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ausência suplementação">Ausência de suplementação</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Solicitação fisioterapia">Solicitação de fisioterapia em quadra</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Fisioterapia fuga">Solicitação de fisioterapia como recurso de fuga</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ritual concentração">Ritual
+                  de concentração</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Jogar raquete">Jogar a
+                  raquete no chão / xingar</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Hidratação consistente">Hidratação consistente</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Ausência hidratação">Ausência de hidratação</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Nutrição consistente">Nutrição consistente</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada" data-valor="Ausência nutrição">Ausência
+                  de nutrição</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Suplementação consistente">Suplementação consistente</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Ausência suplementação">Ausência de suplementação</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Solicitação fisioterapia">Solicitação de fisioterapia em quadra</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="virada"
+                  data-valor="Fisioterapia fuga">Solicitação de fisioterapia como recurso de fuga</button>
               </div>
             </div>
             <hr>
@@ -335,10 +405,14 @@
             <div class="mb-4 modal-section" data-secao="arbitragem" data-multiselect="true">
               <h4 class="section-title">12. Arbitragem</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem" data-valor="Solicitou árbitro">Solicitou o árbitro de forma apropriada</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem" data-valor="Adversário chamou">Adversário chamou o árbitro</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem" data-valor="Decisão favorável">Decisão favorável do árbitro</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem" data-valor="Decisão desfavorável">Decisão desfavorável do árbitro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem"
+                  data-valor="Solicitou árbitro">Solicitou o árbitro de forma apropriada</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem"
+                  data-valor="Adversário chamou">Adversário chamou o árbitro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem"
+                  data-valor="Decisão favorável">Decisão favorável do árbitro</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="arbitragem"
+                  data-valor="Decisão desfavorável">Decisão desfavorável do árbitro</button>
               </div>
             </div>
           </div>
@@ -349,7 +423,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="modal fade" id="setModal" tabindex="-1" aria-labelledby="setModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content text-bg-dark">
@@ -361,10 +435,14 @@
             <div class="mb-4 modal-section" data-secao="comportamentoSet" data-multiselect="true">
               <h4 class="section-title">Comportamento após finalizar o SET</h4>
               <div class="d-flex justify-content-center flex-wrap gap-2">
-                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet" data-valor="Ritual de concentração">Ritual de concentração</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet" data-valor="Jogar a raquete no chão">Jogar a raquete no chão / chutar objetos / xingar</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet" data-valor="Troca de camiseta">Troca de camiseta ao final do set</button>
-                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet" data-valor="Não trocar camiseta">Não trocar de camiseta ao final do set</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet"
+                  data-valor="Ritual de concentração">Ritual de concentração</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet"
+                  data-valor="Jogar a raquete no chão">Jogar a raquete no chão / chutar objetos / xingar</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet"
+                  data-valor="Troca de camiseta">Troca de camiseta ao final do set</button>
+                <button class="btn btn-sm btn-personalizado" data-secao="comportamentoSet"
+                  data-valor="Não trocar camiseta">Não trocar de camiseta ao final do set</button>
               </div>
             </div>
           </div>
@@ -380,4 +458,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </div>
 </body>
+
 </html>

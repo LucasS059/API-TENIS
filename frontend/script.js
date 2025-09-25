@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setIDParaComportamento: null,
         ultimoPontoModalRespostas: null,
         ultimoSetModalRespostas: null,
+        chartInstances: {}
+
     };
 
     const PONTUACAO_TENIS = ['0', '15', '30', '40'];
@@ -103,11 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarConfirmacao(mensagem) {
             this.elements.mensagemConfirmacao.textContent = mensagem;
             this.elements.confirmacaoSucesso.style.display = 'block';
+
             setTimeout(() => {
-                if (!appState.partida || appState.partida.vencedor) return;
                 this.elements.confirmacaoSucesso.style.display = 'none';
-            }, 3000);
+            }, 5000);
         },
+
 
         resetarModalDePonto() {
             document.querySelectorAll('#meuModal .modal-body button').forEach(btn => {
@@ -129,10 +132,22 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.btnPontoJogadorB.disabled = !habilitar;
         },
 
-        alternarVisualizacaoPlacar(mostrarPlacar = true) {
-            this.elements.placarContainer.style.display = mostrarPlacar ? 'block' : 'none';
-            this.elements.relatoriosContainer.style.display = mostrarPlacar ? 'none' : 'block';
+        alternarVisualizacaoPlacar(mostrarPlacar) {
+            const placar = document.querySelector(".placar-container");
+            const botoes = document.querySelector(".row.mt-4");
+            const relatorios = document.getElementById("relatoriosContainer");
+
+            if (mostrarPlacar) {
+                placar.style.display = "block";
+                botoes.style.display = "flex";
+                relatorios.style.display = "none";
+            } else {
+                placar.style.display = "none";
+                botoes.style.display = "none";
+                relatorios.style.display = "block";
+            }
         },
+
 
         criarTabelaPlacar(numSets) {
             const headerRow = this.elements.placarHeader;
@@ -271,10 +286,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.mostrarConfirmacao(`${partida.vencedor} venceu a partida!`);
                 this.alternarBotoesDePonto(false);
                 this.elements.btnRelatorios.style.display = 'block';
+
+                // 👑 coloca a coroa no vencedor
+                if (partida.vencedor === partida.configuracao.playerAName) {
+                    this.elements.nomeJogadorA.innerHTML = `👑 ${partida.configuracao.playerAName}`;
+                } else if (partida.vencedor === partida.configuracao.playerBName) {
+                    this.elements.nomeJogadorB.innerHTML = `👑 ${partida.configuracao.playerBName}`;
+                }
             } else {
                 this.alternarBotoesDePonto(true);
                 this.elements.btnRelatorios.style.display = 'none';
             }
+
         }
     };
 
@@ -385,6 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async carregarRelatorios() {
             const partidas = await api.obterRelatorios();
+            console.log('DADOS RECEBIDOS NO FRONTEND:', partidas);
+
             if (partidas) {
                 this.processarDadosRelatorio(partidas);
             }
@@ -420,14 +445,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+            console.log('DADOS PROCESSADOS PARA OS GRÁFICOS:', dadosProcessados);
 
             this.desenharGraficoTipoPonto(dadosProcessados.tipoPonto);
             this.desenharGraficoComportamentoSet(dadosProcessados.comportamentoSet);
         },
 
         desenharGraficoTipoPonto(dados) {
-            const ctx = document.getElementById('tipoPontoChart').getContext('2d');
-            new Chart(ctx, {
+            const canvasId = 'tipoPontoChart';
+            if (appState.chartInstances[canvasId]) {
+                appState.chartInstances[canvasId].destroy();
+            }
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            appState.chartInstances[canvasId] = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(dados),
@@ -441,54 +473,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#fff'
-                            }
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
+                    plugins: { legend: { labels: { color: '#fff' } } }
                 }
             });
         },
 
         desenharGraficoComportamentoSet(dados) {
-            const ctx = document.getElementById('comportamentoSetChart').getContext('2d');
-            const cores = [
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(153, 102, 255, 0.8)',
-                'rgba(255, 159, 64, 0.8)',
-                'rgba(201, 203, 207, 0.8)'
-            ];
+            const canvasId = 'comportamentoSetChart';
+            if (appState.chartInstances[canvasId]) {
+                appState.chartInstances[canvasId].destroy();
+            }
 
-            new Chart(ctx, {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            appState.chartInstances[canvasId] = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(dados),
                     datasets: [{
                         label: 'Comportamento por Set (Jogador Avaliado)',
                         data: Object.values(dados),
-                        backgroundColor: cores,
-                        borderColor: '#fff',
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)',
+                            'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)', 'rgba(201, 203, 207, 0.8)'
+                        ],
+                        borderColor: '#444',
                         borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#fff'
-                            }
-                        }
-                    }
+                    plugins: { legend: { labels: { color: '#fff' } } }
                 }
             });
         },
@@ -573,10 +590,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.preencherModalDeSet(appState.ultimoSetModalRespostas);
             });
 
-            ui.elements.btnRelatorios.addEventListener('click', () => {
+            ui.elements.btnRelatorios.addEventListener('click', function () {
                 ui.alternarVisualizacaoPlacar(false);
-                this.carregarRelatorios();
+                app.carregarRelatorios();
             });
+
         }
     };
 
