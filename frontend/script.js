@@ -163,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        // ... (código existente da UI)
         atualizarPlacar(partida) {
             if (!partida) {
                 this.alternarBotoesDePonto(false);
@@ -181,13 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const setCellB = document.getElementById(`set${i + 1}JogadorB`);
 
                 if (setCellA && setCellB) {
-                    // ✅ Corrigido: só considera games que já têm vencedor
                     const gamesFinalizados = set.games.filter(g => g.vencedor);
 
                     const gamesA = gamesFinalizados.filter(g => g.vencedor === playerAName).length;
                     const gamesB = gamesFinalizados.filter(g => g.vencedor === playerBName).length;
 
-                    // Mantém a lógica de tiebreak
                     if (
                         set.vencedor &&
                         set.games.length > 0 &&
@@ -197,12 +194,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         const tbA = ultimoGame.placarGame.player1;
                         const tbB = ultimoGame.placarGame.player2;
 
-                        setCellA.textContent = `${gamesA} (${tbA})`;
-                        setCellB.textContent = `${gamesB} (${tbB})`;
+                        setCellA.textContent = `${gamesA} TB:${tbA}`;
+                        setCellB.textContent = `${gamesB} TB:${tbB}`;
                     } else {
                         setCellA.textContent = gamesA;
                         setCellB.textContent = gamesB;
                     }
+
                 }
             });
 
