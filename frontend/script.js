@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
+        // ... (código existente da UI)
         atualizarPlacar(partida) {
             if (!partida) {
                 this.alternarBotoesDePonto(false);
@@ -178,14 +179,24 @@ document.addEventListener('DOMContentLoaded', () => {
             partida.sets.forEach((set, i) => {
                 const setCellA = document.getElementById(`set${i + 1}JogadorA`);
                 const setCellB = document.getElementById(`set${i + 1}JogadorB`);
-                if (setCellA && setCellB) {
-                    const gamesA = set.games.filter(g => g.vencedor === playerAName).length;
-                    const gamesB = set.games.filter(g => g.vencedor === playerBName).length;
 
-                    if (set.vencedor && set.games.length > 0 && set.games[set.games.length - 1].isTiebreak) {
+                if (setCellA && setCellB) {
+                    // ✅ Corrigido: só considera games que já têm vencedor
+                    const gamesFinalizados = set.games.filter(g => g.vencedor);
+
+                    const gamesA = gamesFinalizados.filter(g => g.vencedor === playerAName).length;
+                    const gamesB = gamesFinalizados.filter(g => g.vencedor === playerBName).length;
+
+                    // Mantém a lógica de tiebreak
+                    if (
+                        set.vencedor &&
+                        set.games.length > 0 &&
+                        set.games[set.games.length - 1].isTiebreak
+                    ) {
                         const ultimoGame = set.games[set.games.length - 1];
                         const tbA = ultimoGame.placarGame.player1;
                         const tbB = ultimoGame.placarGame.player2;
+
                         setCellA.textContent = `${gamesA} (${tbA})`;
                         setCellB.textContent = `${gamesB} (${tbB})`;
                     } else {
@@ -194,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
 
             const setAnterior = partida.sets[partida.sets.length - 2];
             if (setAnterior && setAnterior.vencedor && !setAnterior.modalRespostasSet) {
@@ -307,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 pontoData.modalRespostas[secao].push(btn.dataset.valor);
             });
-            
+
             appState.ultimoPontoModalRespostas = pontoData.modalRespostas;
 
             const partida = await api.registrarPonto(appState.partida._id, pontoData);
@@ -332,11 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 modalRespostasSet[secao].push(btn.dataset.valor);
             });
-            
+
             appState.ultimoSetModalRespostas = modalRespostasSet;
 
             const partida = await api.registrarComportamentoSet(appState.partida._id, setID, modalRespostasSet);
-            
+
             if (partida) {
                 const setCorrigido = partida.sets.find(set => set._id === setID);
                 if (setCorrigido) {
@@ -346,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.atualizarPlacar(appState.partida);
             }
         },
-        
+
         preencherModalDePonto(respostas) {
             if (!respostas) return;
             for (const secao in respostas) {
@@ -410,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
-            
+
             this.desenharGraficoTipoPonto(dadosProcessados.tipoPonto);
             this.desenharGraficoComportamentoSet(dadosProcessados.comportamentoSet);
         },
@@ -557,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.registrarComportamentoSet();
                 ui.mostrarConfirmacao("Comportamento do set registrado!");
             });
-            
+
             ui.elements.setModal._element.addEventListener('show.bs.modal', () => {
                 ui.resetarModalDeSet();
                 this.preencherModalDeSet(appState.ultimoSetModalRespostas);

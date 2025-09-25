@@ -123,25 +123,38 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
     }
 
     // Checar se o game terminou
-    let vencedorDoGame = gameAtual.isTiebreak ? checarFimDeTiebreak(gameAtual) : checarFimDeGame(gameAtual);
+    let vencedorDoGame = gameAtual.isTiebreak
+      ? checarFimDeTiebreak(gameAtual)
+      : checarFimDeGame(gameAtual);
 
     if (vencedorDoGame) {
       gameAtual.vencedor = (vencedorDoGame === 'player1') ? player1Name : player2Name;
 
-      // Checar se o set terminou
-      const checarSet = checarFimDeSet(setAtual, partida.configuracao);
-      if (checarSet === 'tiebreak') {
-        setAtual.games.push(criarGame(partida, true));
-      } else if (checarSet) {
-        setAtual.vencedor = checarSet === 'player1' ? player1Name : player2Name;
+      // ✅ SE FOR TIEBREAK → já encerra o set
+      if (gameAtual.isTiebreak) {
+        setAtual.vencedor = gameAtual.vencedor;
         partida.vencedor = checarFimDePartida(partida);
+
         if (!partida.vencedor && partida.sets.length < partida.configuracao.numSets) {
           partida.sets.push(criarSet(partida, partida.sets.length + 1));
         }
       } else {
-        setAtual.games.push(criarGame(partida));
+        // Checar se o set terminou (sem tiebreak)
+        const checarSet = checarFimDeSet(setAtual, partida.configuracao);
+        if (checarSet === 'tiebreak') {
+          setAtual.games.push(criarGame(partida, true));
+        } else if (checarSet) {
+          setAtual.vencedor = checarSet === 'player1' ? player1Name : player2Name;
+          partida.vencedor = checarFimDePartida(partida);
+          if (!partida.vencedor && partida.sets.length < partida.configuracao.numSets) {
+            partida.sets.push(criarSet(partida, partida.sets.length + 1));
+          }
+        } else {
+          setAtual.games.push(criarGame(partida));
+        }
       }
     }
+
 
     partida.updatedAt = new Date();
     await partida.save();
