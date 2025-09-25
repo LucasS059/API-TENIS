@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const appState = {
         partida: null,
         jogadorAtual: null,
+        setIDParaComportamento: null,
+        ultimoPontoModalRespostas: null,
+        ultimoSetModalRespostas: null,
     };
 
     const PONTUACAO_TENIS = ['0', '15', '30', '40'];
@@ -28,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(`Erro na API: ${errorData.message || response.statusText}`);
                 }
                 const data = await response.json();
-                return data.partida;
+                return data.partida || data.partidas;
             } catch (error) {
                 console.error("Falha na comunicação com a API:", error);
                 alert("Ocorreu um erro. Verifique o console para mais detalhes.");
@@ -43,6 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarPonto(partidaId, pontoData) {
             return this.request(`/api/partida/${partidaId}/ponto`, 'POST', pontoData);
         },
+
+        registrarComportamentoSet(partidaId, setId, modalRespostasSet) {
+            return this.request(`/api/partida/${partidaId}/set/${setId}/comportamento`, 'POST', { modalRespostasSet });
+        },
+
+        obterRelatorios() {
+            return this.request('/api/relatorios', 'GET');
+        }
     };
 
     // ========================
@@ -52,11 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
         elements: {
             configModal: new bootstrap.Modal(document.getElementById('configModal')),
             pontoModal: new bootstrap.Modal(document.getElementById('meuModal')),
+            setModal: new bootstrap.Modal(document.getElementById('setModal')),
             configForm: document.getElementById('configForm'),
             btnReiniciar: document.getElementById('btnReiniciar'),
+            btnRelatorios: document.getElementById('btnRelatorios'),
             btnPontoJogadorA: document.getElementById('btnPontoJogadorA'),
             btnPontoJogadorB: document.getElementById('btnPontoJogadorB'),
             btnSalvarModal: document.getElementById('btnSalvarModal'),
+            btnSalvarSet: document.getElementById('btnSalvarSet'),
+            placarContainer: document.querySelector('.placar'),
+            relatoriosContainer: document.getElementById('relatoriosContainer'),
             placarHeader: document.getElementById('placarHeader'),
             placarJogadorA: document.getElementById('placarJogadorA'),
             placarJogadorB: document.getElementById('placarJogadorB'),
@@ -94,15 +110,28 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         resetarModalDePonto() {
-            document.querySelectorAll('#meuModal .modal-body button.active').forEach(btn => {
+            document.querySelectorAll('#meuModal .modal-body button').forEach(btn => {
                 btn.classList.remove('active', 'btn-success');
                 btn.classList.add('btn-secondary');
+            });
+        },
+
+        resetarModalDeSet() {
+            document.querySelectorAll('#setModal .modal-body button').forEach(btn => {
+                btn.classList.remove('active', 'btn-success');
+                btn.classList.add('btn-secondary');
+                btn.blur();
             });
         },
 
         alternarBotoesDePonto(habilitar = true) {
             this.elements.btnPontoJogadorA.disabled = !habilitar;
             this.elements.btnPontoJogadorB.disabled = !habilitar;
+        },
+
+        alternarVisualizacaoPlacar(mostrarPlacar = true) {
+            this.elements.placarContainer.style.display = mostrarPlacar ? 'block' : 'none';
+            this.elements.relatoriosContainer.style.display = mostrarPlacar ? 'none' : 'block';
         },
 
         criarTabelaPlacar(numSets) {
@@ -135,7 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         atualizarPlacar(partida) {
-            if (!partida) return;
+            if (!partida) {
+                this.alternarBotoesDePonto(false);
+                return;
+            }
 
             const { playerAName, playerBName, jogadorAvaliado } = partida.configuracao;
             this.elements.nomeJogadorA.innerHTML = `${playerAName}${jogadorAvaliado === 'player1' ? ' <span style="color:yellow;font-weight:bold;">*</span>' : ''}`;
@@ -143,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('placarBtnJogadorA').textContent = playerAName;
             document.getElementById('placarBtnJogadorB').textContent = playerBName;
 
-            // Atualiza os sets
             partida.sets.forEach((set, i) => {
                 const setCellA = document.getElementById(`set${i + 1}JogadorA`);
                 const setCellB = document.getElementById(`set${i + 1}JogadorB`);
@@ -151,13 +182,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const gamesA = set.games.filter(g => g.vencedor === playerAName).length;
                     const gamesB = set.games.filter(g => g.vencedor === playerBName).length;
 
-                    // Verifica se o set foi vencido por tie-break
                     if (set.vencedor && set.games.length > 0 && set.games[set.games.length - 1].isTiebreak) {
                         const ultimoGame = set.games[set.games.length - 1];
                         const tbA = ultimoGame.placarGame.player1;
                         const tbB = ultimoGame.placarGame.player2;
-                        setCellA.textContent = `${gamesA} (TB: ${tbA})`;
-                        setCellB.textContent = `${gamesB} (TB: ${tbB})`;
+                        setCellA.textContent = `${gamesA} (${tbA})`;
+                        setCellB.textContent = `${gamesB} (${tbB})`;
                     } else {
                         setCellA.textContent = gamesA;
                         setCellB.textContent = gamesB;
@@ -165,12 +195,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Atualiza o game atual e gerencia a visibilidade do placar de tie-break
+            const setAnterior = partida.sets[partida.sets.length - 2];
+            if (setAnterior && setAnterior.vencedor && !setAnterior.modalRespostasSet) {
+                appState.setIDParaComportamento = setAnterior._id;
+                this.abrirModal(this.elements.setModal);
+            }
+
+            const setFinal = partida.sets[partida.sets.length - 1];
+            if (partida.vencedor && setFinal && setFinal.vencedor && !setFinal.modalRespostasSet) {
+                appState.setIDParaComportamento = setFinal._id;
+                this.abrirModal(this.elements.setModal);
+            }
+
             const setAtual = partida.sets[partida.sets.length - 1];
             if (setAtual && setAtual.games.length > 0) {
                 const gameAtual = setAtual.games[setAtual.games.length - 1];
-                
-                // Lógica para mostrar o sacador
+
                 this.elements.saqueJogadorA.textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
                 this.elements.saqueJogadorB.textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
 
@@ -180,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.elements.tbJogadorA.textContent = gameAtual.placarGame.player1;
                     this.elements.tbJogadorB.textContent = gameAtual.placarGame.player2;
 
-                    // Nomes dos jogadores no placar do tie-break
                     this.elements.tbJogadorALabel.textContent = playerAName;
                     this.elements.tbJogadorBLabel.textContent = playerBName;
 
@@ -193,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         const placarA = gameAtual.placarGame.player1;
                         const placarB = gameAtual.placarGame.player2;
-                        
+
                         if (placarA >= 3 && placarB >= 3) {
                             if (placarA === placarB) {
                                 this.elements.gameJogadorA.textContent = '40';
@@ -221,8 +260,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (partida.vencedor) {
                 this.mostrarConfirmacao(`${partida.vencedor} venceu a partida!`);
                 this.alternarBotoesDePonto(false);
+                this.elements.btnRelatorios.style.display = 'block';
             } else {
                 this.alternarBotoesDePonto(true);
+                this.elements.btnRelatorios.style.display = 'none';
             }
         }
     };
@@ -245,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.criarTabelaPlacar(partida.configuracao.numSets);
                 ui.atualizarPlacar(appState.partida);
                 ui.fecharModal(ui.elements.configModal);
+                ui.alternarVisualizacaoPlacar(true);
             }
         },
 
@@ -265,6 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 pontoData.modalRespostas[secao].push(btn.dataset.valor);
             });
+            
+            appState.ultimoPontoModalRespostas = pontoData.modalRespostas;
 
             const partida = await api.registrarPonto(appState.partida._id, pontoData);
             if (partida) {
@@ -273,19 +317,208 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
+        async registrarComportamentoSet() {
+            const setID = appState.setIDParaComportamento;
+            if (!appState.partida || !setID) {
+                console.error("Erro: ID da partida ou do set não encontrado no estado.");
+                return;
+            }
+
+            const modalRespostasSet = {};
+            document.querySelectorAll('#setModal .modal-body button.active').forEach(btn => {
+                const secao = btn.dataset.secao;
+                if (!modalRespostasSet[secao]) {
+                    modalRespostasSet[secao] = [];
+                }
+                modalRespostasSet[secao].push(btn.dataset.valor);
+            });
+            
+            appState.ultimoSetModalRespostas = modalRespostasSet;
+
+            const partida = await api.registrarComportamentoSet(appState.partida._id, setID, modalRespostasSet);
+            
+            if (partida) {
+                const setCorrigido = partida.sets.find(set => set._id === setID);
+                if (setCorrigido) {
+                    setCorrigido.modalRespostasSet = modalRespostasSet;
+                }
+                appState.partida = partida;
+                ui.atualizarPlacar(appState.partida);
+            }
+        },
+        
+        preencherModalDePonto(respostas) {
+            if (!respostas) return;
+            for (const secao in respostas) {
+                respostas[secao].forEach(valor => {
+                    const btn = document.querySelector(`#meuModal button[data-secao="${secao}"][data-valor="${valor}"]`);
+                    if (btn) {
+                        btn.classList.add('active', 'btn-success');
+                        btn.classList.remove('btn-secondary');
+                    }
+                });
+            }
+        },
+
+        preencherModalDeSet(respostas) {
+            if (!respostas) return;
+            for (const secao in respostas) {
+                respostas[secao].forEach(valor => {
+                    const btn = document.querySelector(`#setModal button[data-secao="${secao}"][data-valor="${valor}"]`);
+                    if (btn) {
+                        btn.classList.add('active', 'btn-success');
+                        btn.classList.remove('btn-secondary');
+                    }
+                });
+            }
+        },
+
+        async carregarRelatorios() {
+            const partidas = await api.obterRelatorios();
+            if (partidas) {
+                this.processarDadosRelatorio(partidas);
+            }
+        },
+
+        processarDadosRelatorio(partidas) {
+            const dadosProcessados = {
+                tipoPonto: {},
+                comportamentoSet: {},
+            };
+            const jogadorAvaliadoMap = {};
+
+            partidas.forEach(partida => {
+                const { jogadorAvaliado, playerAName, playerBName } = partida.configuracao;
+                const nomeJogadorAvaliado = (jogadorAvaliado === 'player1') ? playerAName : playerBName;
+                jogadorAvaliadoMap[partida._id] = nomeJogadorAvaliado;
+
+                partida.sets.forEach(set => {
+                    set.games.forEach(game => {
+                        game.pontos.forEach(ponto => {
+                            if (ponto.vencedor === nomeJogadorAvaliado && ponto.modalRespostas && ponto.modalRespostas.resultadoPonto) {
+                                ponto.modalRespostas.resultadoPonto.forEach(tipo => {
+                                    dadosProcessados.tipoPonto[tipo] = (dadosProcessados.tipoPonto[tipo] || 0) + 1;
+                                });
+                            }
+                        });
+                    });
+
+                    if (set.modalRespostasSet && set.vencedor === nomeJogadorAvaliado) {
+                        set.modalRespostasSet.comportamentoSet.forEach(comportamento => {
+                            dadosProcessados.comportamentoSet[comportamento] = (dadosProcessados.comportamentoSet[comportamento] || 0) + 1;
+                        });
+                    }
+                });
+            });
+            
+            this.desenharGraficoTipoPonto(dadosProcessados.tipoPonto);
+            this.desenharGraficoComportamentoSet(dadosProcessados.comportamentoSet);
+        },
+
+        desenharGraficoTipoPonto(dados) {
+            const ctx = document.getElementById('tipoPontoChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dados),
+                    datasets: [{
+                        label: 'Frequência do Tipo de Ponto (Jogador Avaliado)',
+                        data: Object.values(dados),
+                        backgroundColor: 'rgba(255, 206, 86, 0.8)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        desenharGraficoComportamentoSet(dados) {
+            const ctx = document.getElementById('comportamentoSetChart').getContext('2d');
+            const cores = [
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(201, 203, 207, 0.8)'
+            ];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(dados),
+                    datasets: [{
+                        label: 'Comportamento por Set (Jogador Avaliado)',
+                        data: Object.values(dados),
+                        backgroundColor: cores,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
         init() {
             ui.alternarBotoesDePonto(false);
-            
-            const modalButtons = document.querySelectorAll('#meuModal .modal-body button');
-            modalButtons.forEach(btn => {
+
+            const modalPontoButtons = document.querySelectorAll('#meuModal .modal-body button');
+            modalPontoButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const secao = btn.dataset.secao;
-                    document.querySelectorAll(`#meuModal button[data-secao="${secao}"]`).forEach(b => {
-                        b.classList.remove('active', 'btn-success');
-                        b.classList.add('btn-secondary');
-                    });
-                    btn.classList.add('active', 'btn-success');
-                    btn.classList.remove('btn-secondary');
+                    const multiselect = document.querySelector(`#meuModal div[data-secao="${secao}"]`).dataset.multiselect === 'true';
+
+                    if (!multiselect) {
+                        document.querySelectorAll(`#meuModal button[data-secao="${secao}"]`).forEach(b => {
+                            b.classList.remove('active', 'btn-success');
+                            b.classList.add('btn-secondary');
+                        });
+                    }
+                    btn.classList.toggle('active');
+                    btn.classList.toggle('btn-success');
+                    btn.classList.toggle('btn-secondary');
+                });
+            });
+
+            const modalSetButtons = document.querySelectorAll('#setModal .modal-body button');
+            modalSetButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const secao = btn.dataset.secao;
+                    const multiselect = document.querySelector(`#setModal div[data-secao="${secao}"]`).dataset.multiselect === 'true';
+
+                    if (!multiselect) {
+                        document.querySelectorAll(`#setModal button[data-secao="${secao}"]`).forEach(b => {
+                            b.classList.remove('active', 'btn-success');
+                            b.classList.add('btn-secondary');
+                        });
+                    }
+                    btn.classList.toggle('active');
+                    btn.classList.toggle('btn-success');
+                    btn.classList.toggle('btn-secondary');
                 });
             });
 
@@ -296,23 +529,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ui.elements.btnReiniciar.addEventListener('click', () => {
                 ui.abrirModal(ui.elements.configModal);
+                ui.alternarVisualizacaoPlacar(true);
             });
 
             ui.elements.btnPontoJogadorA.addEventListener('click', () => {
                 appState.jogadorAtual = appState.partida.configuracao.playerAName;
+                ui.resetarModalDePonto();
                 ui.abrirModal(ui.elements.pontoModal);
+                this.preencherModalDePonto(appState.ultimoPontoModalRespostas);
             });
 
             ui.elements.btnPontoJogadorB.addEventListener('click', () => {
                 appState.jogadorAtual = appState.partida.configuracao.playerBName;
+                ui.resetarModalDePonto();
                 ui.abrirModal(ui.elements.pontoModal);
+                this.preencherModalDePonto(appState.ultimoPontoModalRespostas);
             });
 
             ui.elements.btnSalvarModal.addEventListener('click', () => {
                 ui.fecharModal(ui.elements.pontoModal);
                 this.registrarPonto();
-                ui.resetarModalDePonto();
                 ui.mostrarConfirmacao("Ponto registrado!");
+            });
+
+            ui.elements.btnSalvarSet.addEventListener('click', () => {
+                ui.fecharModal(ui.elements.setModal);
+                this.registrarComportamentoSet();
+                ui.mostrarConfirmacao("Comportamento do set registrado!");
+            });
+            
+            ui.elements.setModal._element.addEventListener('show.bs.modal', () => {
+                ui.resetarModalDeSet();
+                this.preencherModalDeSet(appState.ultimoSetModalRespostas);
+            });
+
+            ui.elements.btnRelatorios.addEventListener('click', () => {
+                ui.alternarVisualizacaoPlacar(false);
+                this.carregarRelatorios();
             });
         }
     };
