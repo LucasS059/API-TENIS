@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ========================
     // 1. STATE - Gerencia o estado do jogo
-    // ========================
     const appState = {
         partida: null,
         jogadorAtual: null,
@@ -12,9 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const PONTUACAO_TENIS = ['0', '15', '30', '40'];
 
-    // ========================
     // 2. API - Módulo para requisições
-    // ========================
     const api = {
         async request(endpoint, method = 'GET', body = null) {
             try {
@@ -52,9 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
     };
 
-    // ========================
+
     // 3. UI - Manipulação da Interface
-    // ========================
+
     const ui = {
         elements: {
             configModal: new bootstrap.Modal(document.getElementById('configModal')),
@@ -100,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setTimeout(() => {
                 this.elements.confirmacaoSucesso.style.display = 'none';
-            }, 5000);
+            }, 10000);
         },
 
         resetarModalDePonto() {
@@ -272,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.alternarBotoesDePonto(false);
                 this.elements.btnRelatorios.style.display = 'block';
 
-                // 👑 coloca a coroa no vencedor
                 if (partida.vencedor === partida.configuracao.playerAName) {
                     this.elements.nomeJogadorA.innerHTML = `👑 ${partida.configuracao.playerAName}`;
                 } else if (partida.vencedor === partida.configuracao.playerBName) {
@@ -284,9 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ========================
     // 4. APP - Lógica do Jogo
-    // ========================
+    
     const app = {
         async iniciarPartida() {
             const config = {
