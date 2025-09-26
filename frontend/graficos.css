@@ -240,18 +240,18 @@ h1 {
     margin: 20px auto;
 }
 .btn-secondary {
-  background-color: #1e60c8; /* Cor de fundo azul dos botões */
-  color: #ffffff; /* Cor do texto branco */
-  padding: 12px 24px; /* Espaçamento interno do botão */
-  border-radius: 8px; /* Cantos arredondados */
-  border: none; /* Remove a borda padrão */
-  text-decoration: none; /* Remove o sublinhado do link */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte similar à usada no design */
-  font-weight: 600; /* Deixa a fonte em negrito */
-  display: inline-block; /* Permite o uso de padding e margin */
-  cursor: pointer; /* Muda o cursor para indicar que é clicável */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave para profundidade */
-  transition: background-color 0.3s ease; /* Transição suave na cor de fundo */
+  background-color: #1e60c8; 
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px; 
+  border: none;
+  text-decoration: none; 
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+  font-weight: 600; 
+  display: inline-block; 
+  cursor: pointer; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+  transition: background-color 0.3s ease;
 }
 
 .btn-secondary:hover {
