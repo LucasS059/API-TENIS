@@ -54,15 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function processRadarData(partidaData, categorias) {
         if (!partidaData || !Array.isArray(partidaData.sets) || !partidaData.configuracao) return [];
-
-        const sentimentMap = {
-            "Vibração positiva": "positivo", "Expressão equilibrada": "positivo", "Fair Play": "positivo", "Postura ereta": "positivo", "Relaxamento facial": "positivo", "Ativação corporal": "positivo", "Ir à toalha entre pontos": "positivo", "Ritual pré-ponto": "positivo", "Respiração profunda pelo nariz": "positivo", "Hidratação consistente": "positivo", "Nutrição consistente": "positivo", "Suplementação consistente": "positivo", "Ritual de concentração": "positivo", "Troca de camiseta": "positivo", "Ir ao banheiro após ganhar": "positivo", "Decisão favorável": "positivo", "Consistentes": "positivo", "Equilibrado": "positivo", "Indiferença construtiva": "positivo", "Expressão (dentro das regras)": "positivo", "Sorrir com leveza": "positivo", "Foco visual na quadra": "positivo", "Extravasar (permitido)": "positivo", "Correção técnica (sombra)": "positivo", "Positivo": "positivo", "Ausência de correção verbal": "positivo",
-            "Jogar raquete/xingar": "negativo", "Movimentos bruscos/depressivos": "negativo", "Discussão hostil": "negativo", "Postura caída": "negativo", "Tensão facial": "negativo", "Postura passiva": "negativo", "Demorar excessivamente entre pontos": "negativo", "Trocar a raquete para a mão não dominante": "negativo", "Mantém a raquete na mão dominante": "negativo", "Gestos de desequilíbrio ou fraqueza": "negativo", "Respiração ofegante pela boca": "negativo", "Não trocar camiseta": "negativo", "Ir ao banheiro após perder": "negativo", "Decisão desfavorável": "negativo", "Ausência": "negativo", "Excessivos": "negativo", "Desatento": "negativo", "Acelerado": "negativo", "Apatia": "negativo", "Expressão (fora das regras)": "negativo", "Sorrir com ironia": "negativo", "Foco visual fora da quadra": "negativo", "Comportamento autolesivo": "negativo", "Ausência de correção": "negativo", "Negativo": "negativo", "Auto-correção negativa": "negativo"
-        };
-
+        const sentimentMap = { "Vibração positiva": "positivo", "Expressão equilibrada": "positivo", "Fair Play": "positivo", "Postura ereta": "positivo", "Relaxamento facial": "positivo", "Ativação corporal": "positivo", "Ir à toalha": "positivo", "Ritual pré-ponto": "positivo", "Respiração profunda": "positivo", "Hidratação consistente": "positivo", "Nutrição consistente": "positivo", "Suplementação consistente": "positivo", "Ritual de concentração": "positivo", "Troca de camiseta": "positivo", "Ir ao banheiro após ganhar": "positivo", "Decisão favorável": "positivo", "Consistentes": "positivo", "Equilibrado": "positivo", "Indiferença construtiva": "positivo", "Expressão (dentro das regras)": "positivo", "Sorrir com leveza": "positivo", "Foco visual na quadra": "positivo", "Extravasar (permitido)": "positivo", "Correção técnica (sombra)": "positivo", "Positivo": "positivo", "Ausência de correção verbal": "positivo", "Jogar raquete/xingar": "negativo", "Movimentos bruscos/depressivos": "negativo", "Discussão hostil": "negativo", "Postura caída": "negativo", "Tensão facial": "negativo", "Postura passiva": "negativo", "Demorar entre pontos": "negativo", "Trocar raquete de mão": "negativo", "Manter raquete na mão": "negativo", "Gestos de fraqueza": "negativo", "Respiração ofegante": "negativo", "Não trocar camiseta": "negativo", "Ir ao banheiro após perder": "negativo", "Decisão desfavorável": "negativo", "Ausência": "negativo", "Excessivos": "negativo", "Desatento": "negativo", "Acelerado": "negativo", "Apatia": "negativo", "Expressão (fora das regras)": "negativo", "Sorrir com ironia": "negativo", "Foco visual fora da quadra": "negativo", "Comportamento autolesivo": "negativo", "Ausência de correção": "negativo", "Negativo": "negativo", "Auto-correção negativa": "negativo" };
         const positiveCounts = categorias.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
         const negativeCounts = categorias.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
-
         partidaData.sets.forEach(set => {
             if (set.games) {
                 set.games.forEach(game => {
@@ -72,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             for (const cat of categorias) {
                                 const key = keyMap[cat];
                                 if (!key || cat === "Comportamento na virada de lado" || cat === "Comportamento após finalizar o SET" || cat === "Arbitragem") continue;
-
                                 const values = getPropertyCaseInsensitive(modal, key);
                                 if (values && Array.isArray(values)) {
                                     values.forEach(value => {
@@ -106,25 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
-        
         if (partidaData.arbitragens) {
             partidaData.arbitragens.forEach(arbitragem => {
                 const value = arbitragem.resultado;
                 const sentiment = sentimentMap[value];
-                 if (sentiment === "positivo") positiveCounts["Arbitragem"]++;
-                 else if (sentiment === "negativo") negativeCounts["Arbitragem"]++;
+                if (sentiment === "positivo") positiveCounts["Arbitragem"]++;
+                else if (sentiment === "negativo") negativeCounts["Arbitragem"]++;
             });
         }
-        
-        const aggregatedData = [
-            { series: "Positivo", values: categorias.map(cat => ({ axis: cat, value: positiveCounts[cat] })) },
-            { series: "Negativo", values: categorias.map(cat => ({ axis: cat, value: negativeCounts[cat] })) }
-        ];
-
+        const aggregatedData = [{ series: "Positivo", values: categorias.map(cat => ({ axis: cat, value: positiveCounts[cat] })) },{ series: "Negativo", values: categorias.map(cat => ({ axis: cat, value: negativeCounts[cat] })) }];
         const maxCounts = d3.max(aggregatedData, d => d3.max(d.values, v => v.value)) || 0;
         radarChartConfig.maxValue = Math.max(1, maxCounts);
         radarChartConfig.color = d3.scaleOrdinal().domain(["Positivo", "Negativo"]).range(["#2ca02c", "#d62728"]);
-
         return aggregatedData;
     }
 
@@ -132,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cfg = radarChartConfig;
         d3.select(id).select("svg").remove();
         if (!data || data.length === 0 || !data[0].values.length || data[0].values.every(v => v.value === 0) && data[1].values.every(v => v.value === 0)) {
-            d3.select(id).html('<div>Dados insuficientes para o gráfico de radar</div>');
+            d3.select(id).html('<div>Dados insuficientes para o gráfico de perfil</div>');
             return;
         }
         const allAxis = data[0].values.map(i => i.axis), total = allAxis.length, radius = Math.min(cfg.w / 2, cfg.h / 2), angleSlice = Math.PI * 2 / total;
@@ -173,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         scoreA_display = gamePointsA;
                         scoreB_display = gamePointsB;
                     } else {
-                        if (gamePointsA >= 4 && gamePointsA >= gamePointsB + 2) { scoreA_display = 5; }
+                        if (gamePointsA >= 4 && gamePointsA >= gamePointsB + 2) { scoreA_display = 5; } 
                         else if (gamePointsB >= 4 && gamePointsB >= gamePointsA + 2) { scoreB_display = 5; }
                         else if (gamePointsA >= 3 && gamePointsB >= 3) {
                             if (gamePointsA === gamePointsB) { scoreA_display = 3; scoreB_display = 3; }
@@ -209,19 +195,26 @@ document.addEventListener('DOMContentLoaded', () => {
         d3.select(id).html('');
         const containerDiv = d3.select(id).append("div").style("overflow-x", "auto").style("width", "100%");
         const svg = containerDiv.append("svg").attr("width", actualChartWidth + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        
         const x = d3.scaleLinear().range([0, actualChartWidth]).domain([0.5, totalPoints + 0.5]);
         const y = d3.scaleLinear().range([chartHeight, 0]).domain([-5, 5]);
         const yAxisLabels = { 0: '0', 1: '15', 2: '30', 3: '40', 4: 'Vantagem', 5: 'Game' };
+
         svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
         svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]).tickFormat(d => yAxisLabels[Math.abs(d)] || ''));
+
         svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues([-5,-4,-3,-2,-1,1,2,3,4,5]).tickSize(-actualChartWidth).tickFormat(""));
+        
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(4)).text(players[0]);
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-4)).text(players[1]);
+
         setBoundaries.forEach(boundary => {
             svg.append("line").attr("class", "set-boundary").attr("x1", x(boundary + 0.5)).attr("y1", 0).attr("x2", x(boundary + 0.5)).attr("y2", chartHeight).style("stroke", "var(--primary-color)").style("stroke-width", "2px").style("stroke-dasharray", "5,5");
         });
+
         const lineGenerator = d3.line().x(d => x(d.x)).y(d => y(d.score)).curve(d3.curveMonotoneX);
         svg.append("path").datum(data).attr("d", lineGenerator).style("fill", "none").style("stroke", "gray").style("stroke-width", 2);
+
         const colorMap = { [players[0]]: "var(--player-a-color)", [players[1]]: "var(--player-b-color)" };
         svg.selectAll(".dot").data(data).enter().append("circle").attr("class", "dot").attr("cx", d => x(d.x)).attr("cy", d => y(d.score)).attr("r", 5).style("fill", d => colorMap[d.winner]);
     }
@@ -231,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
         const stats = {};
         players.forEach(p => {
-            stats[p] = { aces: 0, winners: 0, unforcedErrors: 0, doubleFaults: 0, firstServeAttempted: 0, firstServeMade: 0, secondServeAttempted: 0, secondServeWon: 0, totalPointsWon: 0 };
+            stats[p] = { aces: 0, winners: 0, unforcedErrors: 0, doubleFaults: 0, forcedErrors: 0, firstServeAttempted: 0, firstServeMade: 0, secondServeAttempted: 0, secondServeWon: 0, totalPointsWon: 0 };
         });
         partidaData.sets.forEach(set => {
             if (!set.games) return;
@@ -239,20 +232,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!game.pontos) return;
                 game.pontos.forEach(ponto => {
                     const modal = ponto.modalRespostas || {};
-                    const vencedor = ponto.vencedor, sacador = ponto.sacador, perdedor = vencedor === players[0] ? players[1] : players[0];
-                    const resultadoArr = getPropertyCaseInsensitive(modal, 'resultadoPonto'), tipoSaqueArr = getPropertyCaseInsensitive(modal, 'tipoSaque');
-                    if(vencedor) stats[vencedor].totalPointsWon++;
-                    if(!resultadoArr) return;
-                    if (resultadoArr.includes("Ace")) stats[vencedor].aces++;
-                    if (resultadoArr.includes("Winner")) stats[vencedor].winners++;
-                    if (resultadoArr.includes("Double Fault")) stats[sacador].doubleFaults++;
-                    if (resultadoArr.includes("Unforced Error")) stats[perdedor].unforcedErrors++;
-                    if(tipoSaqueArr && tipoSaqueArr.includes("First Serve")){
-                        stats[sacador].firstServeAttempted++;
-                        if(!resultadoArr.includes("Double Fault")) stats[sacador].firstServeMade++;
-                    } else if (tipoSaqueArr && tipoSaqueArr.includes("Second Serve")){
-                        stats[sacador].secondServeAttempted++;
-                        if(vencedor === sacador) stats[sacador].secondServeWon++;
+                    const vencedor = ponto.vencedor;
+                    const perdedor = (vencedor === players[0]) ? players[1] : players[0];
+                    const sacador = ponto.sacador;
+                    
+                    if (vencedor) stats[vencedor].totalPointsWon++;
+                    
+                    const resultadoArr = getPropertyCaseInsensitive(modal, 'resultadoPonto');
+                    if (!resultadoArr || resultadoArr.length === 0) return;
+                    
+                    const resultado = resultadoArr[0];
+                    
+                    // --- LÓGICA CORRIGIDA ---
+                    switch (resultado) {
+                        case 'Ace':
+                        case 'Ace (Oponente)':
+                            if (vencedor) stats[vencedor].aces++;
+                            break;
+                        case 'Winner':
+                        case 'Winner (Oponente)':
+                            if (vencedor) stats[vencedor].winners++;
+                            break;
+                        case 'Double Fault':
+                            if (sacador) stats[sacador].doubleFaults++;
+                            break;
+                        case 'Unforced Error':
+                            if (perdedor) stats[perdedor].unforcedErrors++;
+                            break;
+                        case 'Forced Error':
+                        case 'Forced Error (Oponente)':
+                            if (perdedor) stats[perdedor].forcedErrors++;
+                            break;
+                    }
+
+                    const tipoSaqueArr = getPropertyCaseInsensitive(modal, 'tipoSaque');
+                    if (tipoSaqueArr && sacador) {
+                        if (tipoSaqueArr.includes("First Serve")) {
+                            stats[sacador].firstServeAttempted++;
+                            if (resultado !== "Double Fault") {
+                                stats[sacador].firstServeMade++;
+                            }
+                        } else if (tipoSaqueArr.includes("Second Serve")) {
+                            stats[sacador].secondServeAttempted++;
+                            if (vencedor === sacador) {
+                                stats[sacador].secondServeWon++;
+                            }
+                        }
                     }
                 });
             });
@@ -274,9 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
         headRow.append('th').text(players[0]); headRow.append('th').text('Estatística'); headRow.append('th').text(players[1]);
         const tbody = table.append('tbody');
         const rows = [
-            { label: 'Aces', key: 'aces' }, { label: 'Winners', key: 'winners' },
-            { label: 'Erros não forçados', key: 'unforcedErrors' }, { label: 'Duplas faltas', key: 'doubleFaults' },
-            { label: '% 1º Saque', key: 'firstServePct' }, { label: '% Pontos Ganhos com 2º Saque', key: 'secondServeWonPct' },
+            { label: 'Aces', key: 'aces' }, 
+            { label: 'Winners', key: 'winners' },
+            { label: 'Erros não forçados', key: 'unforcedErrors' }, 
+            { label: 'Erros forçados', key: 'forcedErrors' },
+            { label: 'Duplas faltas', key: 'doubleFaults' },
+            { label: '% 1º Saque', key: 'firstServePct' }, 
+            { label: '% Pontos Ganhos com 2º Saque', key: 'secondServeWonPct' },
             { label: 'Total de Pontos Ganhos', key: 'totalPointsWon' }
         ];
         rows.forEach(rowDef => {

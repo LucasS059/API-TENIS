@@ -14,19 +14,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const api = {
         async request(endpoint, method = 'GET', body = null) {
             try {
-                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
                 if (body) options.body = JSON.stringify(body);
                 const response = await fetch(endpoint, options);
-                if (!response.ok) { throw new Error(`Erro de rede: ${response.status} ${response.statusText}`); }
+                if (!response.ok) {
+                    throw new Error(`Erro de rede: ${response.status} ${response.statusText}`);
+                }
                 const data = await response.json();
-                if (!data.success) { throw new Error(data.message || 'Erro na resposta da API'); }
+                if (!data.success) {
+                    throw new Error(data.message || 'Erro na resposta da API');
+                }
                 return data;
             } catch (error) {
                 console.error("Falha na comunicação com a API:", error);
                 return null;
             }
         },
-        iniciarPartida: (config) => api.request('/api/partida', 'POST', { configuracao: config }),
+        iniciarPartida: (config) => api.request('/api/partida', 'POST', {
+            configuracao: config
+        }),
         registrarPonto: (id, data) => api.request(`/api/partida/${id}/ponto`, 'POST', data),
         registrarComportamentoSet: (partidaId, setId, data) => api.request(`/api/partida/${partidaId}/set/${setId}/comportamento`, 'POST', data),
         registrarArbitragem: (id, data) => api.request(`/api/partida/${id}/arbitragem`, 'POST', data),
@@ -83,7 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarConfirmacao(mensagem) {
             this.elements.mensagemConfirmacao.textContent = mensagem;
             this.elements.confirmacaoSucesso.style.display = 'block';
-            setTimeout(() => { this.elements.confirmacaoSucesso.style.display = 'none'; }, 2000);
+            setTimeout(() => {
+                this.elements.confirmacaoSucesso.style.display = 'none';
+            }, 2000);
         },
         resetarModal: (selector) => document.querySelectorAll(`${selector} .btn`).forEach(btn => btn.classList.remove('active')),
         alternarBotoesDePonto: (habilitar = true) => {
@@ -105,10 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#saque-selector .btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector('#saque-selector .btn[data-saque="First Serve"]').classList.add('active');
         },
-        setupPontoModal(isWinContext, lastAnswers) {
-            const { pontoModalTitle, resultadoPontoTitle } = this.elements;
+        setupPontoModal(isWinContext, isAnalyzedPlayerServing, lastAnswers) {
+            const {
+                pontoModalTitle,
+                resultadoPontoTitle
+            } = this.elements;
             pontoModalTitle.textContent = 'Avaliação do Ponto';
-            pontoModalTitle.style.color = 'var(--text-color)';
             if (isWinContext) {
                 resultadoPontoTitle.textContent = 'How was the point won';
                 resultadoPontoTitle.style.color = 'var(--primary-color)';
@@ -122,23 +135,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Array.isArray(valores)) {
                     valores.forEach(valor => {
                         const btn = document.querySelector(`#meuModal [data-secao="${secao}"] [data-valor="${valor}"]`);
-                        if (btn) {
-                            btn.classList.add('active');
-                        }
+                        if (btn) btn.classList.add('active');
                     });
                 }
             }
-            document.querySelectorAll('#meuModal .context-options').forEach(el => el.style.display = 'none');
-            const selector = isWinContext ? '#meuModal .win-context' : '#meuModal .lose-context';
-            const element = document.querySelector(selector);
-            if (element) {
-                element.style.display = 'flex';
-                element.style.flexWrap = 'wrap';
+            document.querySelectorAll('.option-resultado').forEach(el => el.classList.add('d-none'));
+            if (isWinContext) {
+                document.querySelectorAll('[data-context="win"]').forEach(el => el.classList.remove('d-none'));
+                if (isAnalyzedPlayerServing) {
+                    document.querySelector('[data-context="win server"]').classList.remove('d-none');
+                } else {
+                    document.querySelector('[data-context="win receiver"]').classList.remove('d-none');
+                }
+            } else { // isLossContext
+                document.querySelectorAll('[data-context="loss"]').forEach(el => el.classList.remove('d-none'));
+                if (isAnalyzedPlayerServing) {
+                    document.querySelector('[data-context="loss server"]').classList.remove('d-none');
+                } else {
+                    document.querySelector('[data-context="loss receiver"]').classList.remove('d-none');
+                }
             }
         },
         atualizarPlacar(partida) {
             if (!partida) return;
-            const { playerAName, playerBName, jogadorAvaliado, numSets } = partida.configuracao;
+            const {
+                playerAName,
+                playerBName,
+                jogadorAvaliado,
+                numSets
+            } = partida.configuracao;
             this.gerenciarColunasSet(numSets);
             this.elements.nomeJogadorA.innerHTML = `${playerAName} <span id="saqueJogadorA"></span>`;
             this.elements.nomeJogadorB.innerHTML = `${playerBName} <span id="saqueJogadorB"></span>`;
@@ -163,7 +188,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             };
             const gameAtual = setAtual.games[setAtual.games.length - 1];
-            const { player1: placarA, player2: placarB } = gameAtual.placarGame;
+            const {
+                player1: placarA,
+                player2: placarB
+            } = gameAtual.placarGame;
             const getNextScoreLabel = (playerCurrentScore, opponentCurrentScore) => {
                 const isTiebreak = gameAtual.isTiebreak || gameAtual.isSuperTiebreak;
                 if (isTiebreak) {
@@ -200,9 +228,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('saqueJogadorA').textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
                 document.getElementById('saqueJogadorB').textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
                 if (placarA >= 3 && placarB >= 3) {
-                    if (placarA === placarB) { this.elements.gameJogadorA.textContent = '40'; this.elements.gameJogadorB.textContent = '40'; }
-                    else if (placarA > placarB) { this.elements.gameJogadorA.textContent = 'A'; this.elements.gameJogadorB.textContent = '40'; }
-                    else { this.elements.gameJogadorA.textContent = '40'; this.elements.gameJogadorB.textContent = 'A'; }
+                    if (placarA === placarB) {
+                        this.elements.gameJogadorA.textContent = '40';
+                        this.elements.gameJogadorB.textContent = '40';
+                    } else if (placarA > placarB) {
+                        this.elements.gameJogadorA.textContent = 'A';
+                        this.elements.gameJogadorB.textContent = '40';
+                    } else {
+                        this.elements.gameJogadorA.textContent = '40';
+                        this.elements.gameJogadorB.textContent = 'A';
+                    }
                 } else {
                     this.elements.gameJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
                     this.elements.gameJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
@@ -242,7 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         async registrarPonto() {
             if (!appState.partida || appState.partida.vencedor) return;
-            const pontoData = { vencedor: appState.jogadorAtual, modalRespostas: {} };
+            const pontoData = {
+                vencedor: appState.jogadorAtual,
+                modalRespostas: {}
+            };
             const saqueAtivo = document.querySelector('#saque-selector .btn.active');
             pontoData.modalRespostas.tipoSaque = [saqueAtivo ? saqueAtivo.dataset.saque : 'First Serve'];
             document.querySelectorAll('#meuModal .active').forEach(btn => {
@@ -278,10 +316,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!modalRespostasVirada[secao]) modalRespostasVirada[secao] = [];
                 modalRespostasVirada[secao].push(btn.dataset.valor);
             });
-            const { _id: partidaId } = appState.partida;
-            const { triggeringSetId, triggeringGameId } = appState;
+            const {
+                _id: partidaId
+            } = appState.partida;
+            const {
+                triggeringSetId,
+                triggeringGameId
+            } = appState;
             if (partidaId && triggeringSetId && triggeringGameId) {
-                const response = await api.registrarComportamentoVirada(partidaId, triggeringSetId, triggeringGameId, { modalRespostasVirada });
+                const response = await api.registrarComportamentoVirada(partidaId, triggeringSetId, triggeringGameId, {
+                    modalRespostasVirada
+                });
                 if (response && response.success) {
                     ui.fecharModal(ui.elements.viradaModal);
                     ui.mostrarConfirmacao('Comportamento de virada salvo!');
@@ -297,7 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!modalRespostasSet[secao]) modalRespostasSet[secao] = [];
                 modalRespostasSet[secao].push(btn.dataset.valor);
             });
-            const response = await api.registrarComportamentoSet(appState.partida._id, appState.setIDParaComportamento, { modalRespostasSet });
+            const response = await api.registrarComportamentoSet(appState.partida._id, appState.setIDParaComportamento, {
+                modalRespostasSet
+            });
             if (response && response.partida) appState.partida = response.partida;
         },
         async registrarArbitragem() {
@@ -315,7 +362,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const pontosA = ui.elements.gameJogadorA.textContent;
             const pontosB = ui.elements.gameJogadorB.textContent;
             const placarNoMomento = `Sets: ${setsA}-${setsB}, Games: ${gamesA}-${gamesB}, Pontos: ${pontosA}-${pontosB}`;
-            const dados = { solicitante: solicitanteBtn.dataset.valor, resultado: resultadoBtn.dataset.valor, placarNoMomento };
+            const dados = {
+                solicitante: solicitanteBtn.dataset.valor,
+                resultado: resultadoBtn.dataset.valor,
+                placarNoMomento
+            };
             const response = await api.registrarArbitragem(appState.partida._id, dados);
             if (response && response.partida) {
                 appState.partida = response.partida;
@@ -325,13 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         init() {
             ui.alternarBotoesDePonto(false);
-            ui.elements.configForm.addEventListener('submit', (e) => { e.preventDefault(); this.iniciarPartida(); });
-            
+            ui.elements.configForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.iniciarPartida();
+            });
             ui.elements.btnNovaPartida.addEventListener('click', () => {
                 ui.fecharModal(ui.elements.vencedorModal);
                 ui.abrirModal(ui.elements.configModal);
             });
-
             ['btnPontoJogadorA', 'btnPontoJogadorB'].forEach(id => {
                 ui.elements[id].addEventListener('click', () => {
                     if (!appState.partida) return;
@@ -339,25 +391,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     appState.jogadorAtual = pontoVencedorName;
                     const jogadorAvaliadoKey = appState.partida.configuracao.jogadorAvaliado;
                     const jogadorAvaliadoName = (jogadorAvaliadoKey === 'player1') ? appState.partida.configuracao.playerAName : appState.partida.configuracao.playerBName;
+                    const setAtual = appState.partida.sets[appState.partida.sets.length - 1];
+                    const gameAtual = setAtual.games[setAtual.games.length - 1];
+                    const sacador = gameAtual.sacador;
                     const isWinContext = (pontoVencedorName === jogadorAvaliadoName);
+                    const isAnalyzedPlayerServing = (jogadorAvaliadoName === sacador);
                     const lastAnswers = isWinContext ? appState.lastWinAnswers : appState.lastLossAnswers;
-                    ui.setupPontoModal(isWinContext, lastAnswers);
+                    ui.setupPontoModal(isWinContext, isAnalyzedPlayerServing, lastAnswers);
                     ui.abrirModal(ui.elements.pontoModal);
                 });
             });
-
             document.querySelectorAll('#saque-selector .btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('#saque-selector .btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
                 });
             });
-
-            ui.elements.btnSalvarModal.addEventListener('click', () => { ui.fecharModal(ui.elements.pontoModal); this.registrarPonto(); });
-            ui.elements.btnSalvarSet.addEventListener('click', () => { ui.fecharModal(ui.elements.setModal); this.registrarComportamentoSet(); });
+            ui.elements.btnSalvarModal.addEventListener('click', () => {
+                ui.fecharModal(ui.elements.pontoModal);
+                this.registrarPonto();
+            });
+            ui.elements.btnSalvarSet.addEventListener('click', () => {
+                ui.fecharModal(ui.elements.setModal);
+                this.registrarComportamentoSet();
+            });
             ui.elements.btnSalvarArbitragem.addEventListener('click', () => this.registrarArbitragem());
             ui.elements.btnSalvarVirada.addEventListener('click', () => this.registrarComportamentoVirada());
-            
             document.querySelectorAll('.modal .btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     if (e.target.closest('.modal-footer') || e.target.classList.contains('btn-close')) return;
@@ -368,22 +427,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.target.classList.toggle('active');
                 });
             });
-
             const arbitragemModalEl = document.getElementById('arbitragemModal');
             if (arbitragemModalEl) {
                 const quemSolicitouSection = arbitragemModalEl.querySelector('#quemSolicitouSection');
                 const opcoesArbitragemSection = arbitragemModalEl.querySelector('#opcoesArbitragemSection');
                 const footer = arbitragemModalEl.querySelector('.modal-footer');
                 const solicitanteOptionsDiv = document.getElementById('arbitragem-solicitante-options');
-                
                 const setupArbitragemModal = () => {
-                    solicitanteOptionsDiv.innerHTML = ''; 
+                    solicitanteOptionsDiv.innerHTML = '';
                     quemSolicitouSection.style.display = 'block';
                     opcoesArbitragemSection.style.display = 'none';
                     footer.style.display = 'none';
                     ui.resetarModal('#arbitragemModal');
                     if (!appState.partida) return;
-                    const { playerAName, playerBName } = appState.partida.configuracao;
+                    const {
+                        playerAName,
+                        playerBName
+                    } = appState.partida.configuracao;
                     const players = [playerAName, playerBName];
                     players.forEach(playerName => {
                         const button = document.createElement('button');
@@ -399,17 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         solicitanteOptionsDiv.appendChild(button);
                     });
                 };
-                
                 opcoesArbitragemSection.querySelectorAll('.btn').forEach(button => {
                     button.addEventListener('click', () => {
                         footer.style.display = 'flex';
                     });
                 });
-                
                 arbitragemModalEl.addEventListener('show.bs.modal', setupArbitragemModal);
             }
         }
     };
-
     app.init();
 });

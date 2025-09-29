@@ -15,12 +15,13 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/tennis', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log('MongoDB conectado'))
-    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
-
+  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+    
+// --- Esquemas do Banco de Dados ---
 const PontoSchema = new mongoose.Schema({
     pontoId: String,
     vencedor: String,
-    tipoPonto: String,
+    tipoPonto: String,      
     placarNoMomento: String,
     modalRespostas: Object,
     timestamp: Date,
@@ -38,7 +39,7 @@ const GameSchema = new mongoose.Schema({
     isSuperTiebreak: { type: Boolean, default: false },
     sacador: String,
     pontos: [PontoSchema],
-    changeoverData: { type: Object, default: null }
+    changeoverData: { type: Object, default: null } 
 }, { _id: false });
 
 const SetSchema = new mongoose.Schema({
@@ -74,7 +75,13 @@ const PartidaSchema = new mongoose.Schema({
 const Partida = mongoose.model('Partida', PartidaSchema);
 
 app.use(express.json());
+
+// Servindo arquivos estáticos da pasta 'frontend'
 app.use(express.static(path.resolve(__dirname, '..', 'frontend')));
+app.use('/assets', express.static(path.resolve(__dirname, '..', 'assets')));
+
+
+// --- Rotas da API ---
 
 app.get('/graficos.html', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'graficos.html')));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html')));
@@ -103,7 +110,7 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
     try {
         const partida = await Partida.findById(req.params.id);
         if (!partida || partida.vencedor) return res.status(400).json({ success: false, message: 'Partida não encontrada ou finalizada.' });
-
+        
         const { vencedor, modalRespostas } = req.body;
         const { playerAName, playerBName } = partida.configuracao;
         let setAtual = partida.sets.find(s => !s.vencedor);
@@ -111,21 +118,21 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
         let isChangeover = false;
 
         if (vencedor === playerAName) gameAtual.placarGame.player1++; else gameAtual.placarGame.player2++;
-
+        
         const { tipoPonto, placarFormatado } = formatarPlacarAtual(gameAtual.placarGame, gameAtual.isTiebreak || gameAtual.isSuperTiebreak);
 
-        gameAtual.pontos.push({
-            pontoId: uuidv4(),
-            vencedor,
-            modalRespostas,
+        gameAtual.pontos.push({ 
+            pontoId: uuidv4(), 
+            vencedor, 
+            modalRespostas, 
             sacador: gameAtual.sacador,
             tipoPonto,
             placarNoMomento: placarFormatado,
-            timestamp: new Date()
+            timestamp: new Date() 
         });
-
+        
         const vencedorDoGame = gameAtual.isTiebreak || gameAtual.isSuperTiebreak ? checarFimDeTiebreak(gameAtual) : checarFimDeGame(gameAtual);
-
+        
         if (vencedorDoGame) {
             gameAtual.vencedor = (vencedorDoGame === 'player1') ? playerAName : playerBName;
 
@@ -135,9 +142,9 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
                 partida.vencedor = gameAtual.vencedor;
             } else {
                 if (vencedorDoGame === 'player1') setAtual.placarGames.player1++; else setAtual.placarGames.player2++;
-
+                
                 const resultadoSet = checarFimDeSet(setAtual, partida);
-
+                
                 if (resultadoSet.vencedor) {
                     setAtual.vencedor = (resultadoSet.vencedor === 'player1') ? playerAName : playerBName;
                     partida.vencedor = checarFimDePartida(partida);
@@ -170,9 +177,9 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
             }
 
         } else if (gameAtual.isTiebreak || gameAtual.isSuperTiebreak) {
-            gameAtual.sacador = getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, partida);
+             gameAtual.sacador = getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, partida);
         }
-
+        
         partida.updatedAt = new Date();
         await partida.save();
 
@@ -274,6 +281,8 @@ app.get('/api/partida/:id', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
+// --- FUNÇÕES AUXILIARES ---
+
 function formatarPlacarAtual(placarAtual, isTiebreak) {
     const pontos = ["0", "15", "30", "40", "AD"];
     const p1 = placarAtual.player1;
@@ -282,19 +291,19 @@ function formatarPlacarAtual(placarAtual, isTiebreak) {
     if (isTiebreak) {
         return { tipoPonto: `${p1 > p2 ? p1 : p2}`, placarFormatado: `${p1}-${p2}` };
     }
-
+    
     let placarFormatado = `${pontos[p1]}-${pontos[p2]}`;
     let tipoPonto = "Game";
 
     if (p1 < 4 && p2 < 4) {
         tipoPonto = pontos[Math.max(p1, p2)];
-    } else if (p1 === p2) {
+    } else if (p1 === p2) { 
         placarFormatado = "40-40";
         tipoPonto = "40";
     } else if (p1 > p2) {
         placarFormatado = "AD-40";
         tipoPonto = "AD";
-    } else {
+    } else { 
         placarFormatado = "40-AD";
         tipoPonto = "AD";
     }
@@ -303,24 +312,21 @@ function formatarPlacarAtual(placarAtual, isTiebreak) {
         placarFormatado = "Game";
         tipoPonto = "Game";
     }
-
+    
     return { tipoPonto, placarFormatado };
 }
 
+// CORREÇÃO APLICADA AQUI
 function getSacador(partida) {
     const { playerAName, playerBName } = partida.configuracao;
-    if (partida.sets.length === 1 && partida.sets[0].games.length === 1) return playerAName;
-
     const ultimoSet = partida.sets[partida.sets.length - 1];
     const ultimoGame = ultimoSet.games[ultimoSet.games.length - 1];
 
-    if (ultimoSet.games.length === 1 && partida.sets.length > 1) {
-        const setAnterior = partida.sets[partida.sets.length - 2];
-        const ultimoSacadorDoSetAnterior = setAnterior.games[setAnterior.games.length - 1].sacador;
-        return ultimoSacadorDoSetAnterior === playerAName ? playerBName : playerAName;
-    }
+    // A lógica é simples: o sacador do novo game é o jogador oposto ao sacador do último game.
+    // Isso funciona tanto para a troca de games dentro de um set, quanto para o início de um novo set.
     return ultimoGame.sacador === playerAName ? playerBName : playerAName;
 }
+
 
 function getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, partida) {
     const totalPontos = gameAtual.placarGame.player1 + gameAtual.placarGame.player2;
@@ -338,7 +344,7 @@ function getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, parti
     if (totalPontos === 0) {
         return primeiroSacadorDoTiebreak;
     }
-
+    
     if ((totalPontos - 1) % 4 < 2) {
         return oponente;
     } else {
@@ -385,11 +391,11 @@ function checarFimDeSet(set, partida) {
     if (gamesA === 6 && gamesB === 6) {
         return { vencedor: null, iniciarTiebreak: true, isSuperTiebreak: false };
     }
-
+    
     if ((gamesA >= 6 && (gamesA - gamesB >= 2 || gamesA === 7)) || (gamesB >= 6 && (gamesB - gamesA >= 2 || gamesB === 7))) {
-        return { vencedor: gamesA > gamesB ? 'player1' : 'player2', iniciarTiebreak: false };
+       return { vencedor: gamesA > gamesB ? 'player1' : 'player2', iniciarTiebreak: false };
     }
-
+    
     return { vencedor: null, iniciarTiebreak: false };
 }
 
