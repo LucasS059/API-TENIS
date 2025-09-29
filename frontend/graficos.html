@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Partida de Tênis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/graficos.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
-
 <body>
-    <div class="header">
-        <h1>API de Tênis - Análise de Partida</h1>
-    <div class="main-container">
-        <h1>Análise de Partida de Tênis</h1>
+
+    <header class="header">
+        <a href="/" class="back-button">← Voltar ao Placar</a>
         <div class="controls-container">
             <select id="partida-dropdown">
                 <option value="">-- Selecione uma partida --</option>
             </select>
-            <button id="load-button" class="btn-primary">Carregar Gráficos</button>
+            <button id="load-button">Carregar Análise</button>
         </div>
+    </header>
 
-        <div id="points-chart" class="chart-container">
-            <h2>Desempenho dos Jogadores por Ponto</h2>
+    <main class="main-container">
+        <div class="grid-layout">
+             <div class="grid-item chart-container full-width" id="points-chart-container">
+                <h2>Ponto a Ponto - Games</h2>
+                <div id="points-chart"></div>
+            </div>
+            <div class="grid-item chart-container" id="radar-chart-container">
+                <h2>Perfil Comportamental</h2>
+                <div id="radar-chart"></div>
+            </div>
+            <div class="grid-item stats-container" id="stats-chart-container">
+                <h2>Estatísticas Gerais</h2>
+                <div id="stats-chart"></div>
+            </div>
+           
         </div>
-
-        <div id="radar-chart" class="chart-container">
-            <h2>Resumo de Categorias da Partida</h2>
-        </div>
-
-        <div id="stats-chart" class="stats-container">
-            <h2>Estatísticas da Partida</h2>
-        </div>
-    </div>
-
-    <div>
-        <a href="/" class="btn-secondary">Voltar à Página Inicial</a>
-    </div>
+    </main>
 
     <script src="/graficos.js"></script>
 </body>
-
 </html>

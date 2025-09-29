@@ -1,98 +1,245 @@
-.btn-light,
-.btn-light:hover,
-.btn-light:focus {
-  color: #333;
-  text-shadow: none;
+:root {
+    --background-color: #1a1a1a;
+    --surface-color: #2a2a2a;
+    --primary-color: #c8ff00;
+    --text-color: #f5f5f5;
+    --secondary-text-color: #a0a0a0;
+    --border-color: #404040;
 }
 
 body {
-  text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
-  box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
 }
 
 .cover-container {
-  max-width: 42em;
+    max-width: 55em;
 }
 
-.nav-masthead .nav-link {
-  color: rgba(255, 255, 255, .5);
-  border-bottom: .25rem solid transparent;
+.placar-container {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    border: 1px solid var(--border-color);
 }
 
-.nav-masthead .nav-link:hover,
-.nav-masthead .nav-link:focus {
-  border-bottom-color: rgba(255, 255, 255, .25);
+.placar-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
-.nav-masthead .nav-link + .nav-link {
-  margin-left: 1rem;
+.jogador-avaliado-info {
+    color: var(--secondary-text-color);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
 }
 
-.nav-masthead .active {
-  color: #fff;
-  border-bottom-color: #fff;
+.jogador-avaliado-info strong {
+    color: var(--primary-color);
 }
 
-.modal-content.text-bg-dark {
-    background-color: #212529;
-    color: #f8f9fa;
-    border: none;
+.placar-display {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.modal-header, .modal-footer {
-  border-bottom: 1px solid #495057;
-  border-top: 1px solid #495057;
-  justify-content: center;
+.placar-header,
+.placar-linha {
+    display: grid;
+    grid-template-columns: 2fr repeat(3, 1fr) 1.2fr;
+}
+
+.placar-header {
+    background-color: #333;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+    text-align: center;
+}
+
+.placar-header>div:first-child {
+    text-align: left;
+}
+
+.placar-linha {
+    align-items: center;
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.placar-linha:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.placar-jogador {
+    text-align: left;
+    font-weight: 600;
+}
+
+.placar-pontos {
+    display: contents;
+}
+
+.placar-pontos>div {
+    text-align: center;
+    font-weight: 500;
+}
+
+#gameJogadorA,
+#gameJogadorB {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.action-buttons .btn,
+.secondary-actions .btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.modal-content {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border-color);
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  color: #fff;
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
 }
 
 hr {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  margin: 1.5rem 0;
-  width: 80%;
-  margin-left: auto;
-  margin-right: auto;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
 }
 
 .btn-personalizado {
-    background-color: #495057;
-    color: #f8f9fa;
-    border: none;
-    border-radius: 0.25rem;
+    background-color: #3e3e3e;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+    padding: 0.75rem 1rem;
     font-size: 0.9rem;
+    border-radius: 8px;
+}
+
+.btn-personalizado.active,
+.btn.btn-sm.btn-secondary.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #000;
+    font-weight: 600;
+}
+
+.btn-saque {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--secondary-text-color);
+    font-size: 0.9rem;
+    padding: 0.6rem;
+}
+
+.btn-saque.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--background-color);
+    font-weight: 600;
+}
+
+#btnPontoJogadorA,
+#btnPontoJogadorB {
+    background-color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    color: var(--background-color);
+    font-weight: 700;
+    padding: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#btnPontoJogadorA:hover,
+#btnPontoJogadorB:hover {
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+#btnPontoJogadorA:disabled,
+#btnPontoJogadorB:disabled {
+    background-color: #444;
+    border-color: #444;
+    color: #888;
+}
+
+#btnAbrirModalArbitragem {
+    background-color: var(--surface-color);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    font-weight: 600;
+    padding: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#btnAbrirModalArbitragem:hover {
+    background-color: var(--border-color);
+    border-color: #555;
+}
+
+.secondary-actions .btn {
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    text-decoration: none;
     font-weight: 500;
-    padding: 0.5rem 1rem;
-    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.btn-personalizado:hover,
-.btn-personalizado:focus {
-    background-color: #5b626a;
-    color: #fff;
-    transform: translateY(-2px);
+.secondary-actions .btn:hover {
+    color: var(--primary-color);
+    background-color: var(--surface-color);
+    border-color: var(--primary-color);
 }
 
-.btn-personalizado.active {
-    background-color: #0d6efd;
-    color: #fff;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5);
+#tiebreak-container {
+    background-color: rgba(200, 255, 0, 0.05);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 1.5rem;
 }
 
-.btn.active[data-multiselect="true"] {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
+#tiebreak-container h4 {
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
-.d-flex.justify-content-center.flex-wrap.gap-2 {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 90%;
+.tiebreak-score-display {
+    font-size: 1.5rem;
+}
+
+.tiebreak-rules {
+    font-size: 0.8rem;
+    color: var(--secondary-text-color);
+    margin-top: 1rem;
+}
+
+#saque-selector {
+    display: none;
 }

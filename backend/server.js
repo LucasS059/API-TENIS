@@ -3,27 +3,29 @@ import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Conecta ao MongoDB usando Mongoose
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/tennis', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log('MongoDB conectado'))
     .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
-    
-// Definição dos Schemas e Models
+
 const PontoSchema = new mongoose.Schema({
     pontoId: String,
     vencedor: String,
-    ponto: String,
+    tipoPonto: String,
+    placarNoMomento: String,
     modalRespostas: Object,
-    timestamp: Date
-});
+    timestamp: Date,
+    sacador: String
+}, { _id: false });
 
 const GameSchema = new mongoose.Schema({
     gameId: String,
@@ -33,22 +35,37 @@ const GameSchema = new mongoose.Schema({
         player2: { type: Number, default: 0 }
     },
     isTiebreak: { type: Boolean, default: false },
+    isSuperTiebreak: { type: Boolean, default: false },
     sacador: String,
-    pontos: [PontoSchema]
-});
+    pontos: [PontoSchema],
+    changeoverData: { type: Object, default: null }
+}, { _id: false });
 
 const SetSchema = new mongoose.Schema({
     _id: { type: String, default: uuidv4 },
     numero: Number,
     vencedor: { type: String, default: null },
+    placarGames: {
+        player1: { type: Number, default: 0 },
+        player2: { type: Number, default: 0 }
+    },
     games: [GameSchema],
-    modalRespostasSet: Object
+    modalRespostasSet: { type: Object, default: null }
 });
+
+const ArbitragemSchema = new mongoose.Schema({
+    arbitragemId: String,
+    solicitante: String,
+    resultado: String,
+    placarNoMomento: String,
+    timestamp: Date
+}, { _id: false });
 
 const PartidaSchema = new mongoose.Schema({
     _id: String,
     configuracao: Object,
     sets: [SetSchema],
+    arbitragens: [ArbitragemSchema],
     vencedor: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
@@ -57,15 +74,11 @@ const PartidaSchema = new mongoose.Schema({
 const Partida = mongoose.model('Partida', PartidaSchema);
 
 app.use(express.json());
-
-// Rota para arquivos estáticos
 app.use(express.static(path.resolve(__dirname, '..', 'frontend')));
 
-app.get('/graficos.html', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '..', 'frontend', 'graficos.html'));
-});
+app.get('/graficos.html', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'graficos.html')));
+app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, '..', 'frontend', 'index.html')));
 
-// Cria uma nova partida
 app.post('/api/partida', async (req, res) => {
     try {
         const { configuracao } = req.body;
@@ -73,7 +86,8 @@ app.post('/api/partida', async (req, res) => {
         const novaPartida = new Partida({
             _id: partidaId,
             configuracao,
-            sets: []
+            sets: [],
+            arbitragens: []
         });
         const novoSet = criarSet(novaPartida, 1);
         novaPartida.sets.push(novoSet);
@@ -85,199 +99,264 @@ app.post('/api/partida', async (req, res) => {
     }
 });
 
-// Registra um ponto na partida
 app.post('/api/partida/:id/ponto', async (req, res) => {
     try {
-        const { id } = req.params;
+        const partida = await Partida.findById(req.params.id);
+        if (!partida || partida.vencedor) return res.status(400).json({ success: false, message: 'Partida não encontrada ou finalizada.' });
+
         const { vencedor, modalRespostas } = req.body;
-        const partida = await Partida.findById(id);
-        if (!partida) {
-            return res.status(404).json({ success: false, message: 'Partida não encontrada.' });
-        }
-        if (partida.vencedor) {
-            return res.status(400).json({ success: false, message: 'O jogo já foi finalizado.' });
-        }
-
-        const setAtual = partida.sets[partida.sets.length - 1];
+        const { playerAName, playerBName } = partida.configuracao;
+        let setAtual = partida.sets.find(s => !s.vencedor);
         let gameAtual = setAtual.games[setAtual.games.length - 1];
-        const player1Name = partida.configuracao.playerAName;
-        const player2Name = partida.configuracao.playerBName;
+        let isChangeover = false;
 
-        if (vencedor === player1Name) gameAtual.placarGame.player1++;
-        else gameAtual.placarGame.player2++;
+        if (vencedor === playerAName) gameAtual.placarGame.player1++; else gameAtual.placarGame.player2++;
+
+        const { tipoPonto, placarFormatado } = formatarPlacarAtual(gameAtual.placarGame, gameAtual.isTiebreak || gameAtual.isSuperTiebreak);
 
         gameAtual.pontos.push({
             pontoId: uuidv4(),
             vencedor,
             modalRespostas,
+            sacador: gameAtual.sacador,
+            tipoPonto,
+            placarNoMomento: placarFormatado,
             timestamp: new Date()
         });
 
-        if (gameAtual.isTiebreak) {
-            gameAtual.sacador = getSacador(partida);
-        }
-
-        let vencedorDoGame = gameAtual.isTiebreak
-            ? checarFimDeTiebreak(gameAtual)
-            : checarFimDeGame(gameAtual);
+        const vencedorDoGame = gameAtual.isTiebreak || gameAtual.isSuperTiebreak ? checarFimDeTiebreak(gameAtual) : checarFimDeGame(gameAtual);
 
         if (vencedorDoGame) {
-            gameAtual.vencedor = (vencedorDoGame === 'player1') ? player1Name : player2Name;
+            gameAtual.vencedor = (vencedorDoGame === 'player1') ? playerAName : playerBName;
 
-            if (gameAtual.isTiebreak) {
+            if (gameAtual.isSuperTiebreak) {
                 setAtual.vencedor = gameAtual.vencedor;
-                partida.vencedor = checarFimDePartida(partida);
-
-                if (!partida.vencedor && partida.sets.length < partida.configuracao.numSets) {
-                    partida.sets.push(criarSet(partida, partida.sets.length + 1));
-                }
+                if (gameAtual.vencedor === playerAName) setAtual.placarGames.player1 = 1; else setAtual.placarGames.player2 = 1;
+                partida.vencedor = gameAtual.vencedor;
             } else {
-                const checarSet = checarFimDeSet(setAtual, partida.configuracao);
-                if (checarSet === 'tiebreak') {
-                    setAtual.games.push(criarGame(partida, true));
-                } else if (checarSet) {
-                    setAtual.vencedor = checarSet === 'player1' ? player1Name : player2Name;
+                if (vencedorDoGame === 'player1') setAtual.placarGames.player1++; else setAtual.placarGames.player2++;
+
+                const resultadoSet = checarFimDeSet(setAtual, partida);
+
+                if (resultadoSet.vencedor) {
+                    setAtual.vencedor = (resultadoSet.vencedor === 'player1') ? playerAName : playerBName;
                     partida.vencedor = checarFimDePartida(partida);
-                    if (!partida.vencedor && partida.sets.length < partida.configuracao.numSets) {
-                        partida.sets.push(criarSet(partida, partida.sets.length + 1));
+
+                    if (!partida.vencedor) {
+                        const setsVencidosA = partida.sets.filter(s => s.vencedor === playerAName).length;
+                        const setsVencidosB = partida.sets.filter(s => s.vencedor === playerBName).length;
+                        const setsNecessariosParaVencer = Math.ceil(partida.configuracao.numSets / 2);
+                        const isDecidingSetTime = (setsVencidosA === setsNecessariosParaVencer - 1) && (setsVencidosB === setsNecessariosParaVencer - 1);
+
+                        if (partida.configuracao.superTiebreak && isDecidingSetTime) {
+                            const numeroNovoSet = partida.sets.length + 1;
+                            const superTiebreakGame = criarGame(partida, true, true);
+                            const novoSet = { _id: uuidv4(), numero: numeroNovoSet, placarGames: { player1: 0, player2: 0 }, games: [superTiebreakGame] };
+                            partida.sets.push(novoSet);
+                        } else {
+                            partida.sets.push(criarSet(partida, partida.sets.length + 1));
+                        }
                     }
+                } else if (resultadoSet.iniciarTiebreak) {
+                    setAtual.games.push(criarGame(partida, true, false));
                 } else {
-                    setAtual.games.push(criarGame(partida));
+                    setAtual.games.push(criarGame(partida, false, false));
                 }
             }
+
+            const totalGamesNoSet = setAtual.placarGames.player1 + setAtual.placarGames.player2;
+            if (!gameAtual.isTiebreak && !gameAtual.isSuperTiebreak && totalGamesNoSet > 0 && totalGamesNoSet % 2 === 1) {
+                isChangeover = true;
+            }
+
+        } else if (gameAtual.isTiebreak || gameAtual.isSuperTiebreak) {
+            gameAtual.sacador = getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, partida);
         }
 
         partida.updatedAt = new Date();
         await partida.save();
-        res.status(200).json({ success: true, partida });
+
+        const partidaObj = partida.toObject();
+        if (isChangeover) {
+            partidaObj.triggerChangeoverModal = true;
+            partidaObj.triggeringGameId = gameAtual.gameId;
+            partidaObj.triggeringSetId = setAtual._id;
+        }
+
+        res.status(200).json({ success: true, partida: partidaObj });
+
     } catch (err) {
         console.error("Erro ao registrar o ponto:", err);
         res.status(500).json({ success: false, message: 'Erro ao registrar o ponto.', error: err.message });
     }
 });
 
-// Salva o comportamento do set
+app.post('/api/partida/:partidaId/set/:setId/game/:gameId/changeover', async (req, res) => {
+    try {
+        const { partidaId, setId, gameId } = req.params;
+        const { modalRespostasVirada } = req.body;
+        const partida = await Partida.findById(partidaId);
+        if (!partida) return res.status(404).json({ success: false, message: 'Partida não encontrada' });
+        const set = partida.sets.id(setId);
+        if (!set) return res.status(404).json({ success: false, message: 'Set não encontrado' });
+        const game = set.games.find(g => g.gameId === gameId);
+        if (!game) return res.status(404).json({ success: false, message: 'Game não encontrado' });
+        game.changeoverData = modalRespostasVirada;
+        await partida.save();
+        res.json({ success: true, message: 'Dados de virada de lado salvos.' });
+    } catch (error) {
+        console.error("Erro ao salvar dados da virada:", error);
+        res.status(500).json({ success: false, message: 'Erro ao salvar dados da virada', error: error.message });
+    }
+});
+
 app.post('/api/partida/:partidaId/set/:setId/comportamento', async (req, res) => {
     try {
         const { partidaId, setId } = req.params;
         const { modalRespostasSet } = req.body;
-
         const partida = await Partida.findById(partidaId);
-        if (!partida) {
-            return res.status(404).json({ message: 'Partida não encontrada' });
-        }
-
-        const setAtual = partida.sets.id(setId);
-        if (!setAtual) {
-            return res.status(404).json({ message: 'Set não encontrado' });
-        }
-
-        setAtual.modalRespostasSet = modalRespostasSet;
-
+        if (!partida) return res.status(404).json({ success: false, message: 'Partida não encontrada' });
+        const set = partida.sets.id(setId);
+        if (!set) return res.status(404).json({ success: false, message: 'Set não encontrado' });
+        set.modalRespostasSet = modalRespostasSet;
         await partida.save();
-        res.json({ partida });
+        res.json({ success: true, partida });
     } catch (error) {
-        console.error("Erro ao salvar comportamento do set:", error);
-        res.status(500).json({ message: 'Erro ao salvar comportamento do set', error });
+        res.status(500).json({ success: false, message: 'Erro ao salvar comportamento do set', error: error.message });
     }
 });
 
-// Rota para obter uma lista de todas as partidas
+app.post('/api/partida/:id/arbitragem', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { solicitante, resultado, placarNoMomento } = req.body;
+        const partida = await Partida.findById(id);
+        if (!partida) return res.status(404).json({ success: false, message: 'Partida não encontrada' });
+        partida.arbitragens.push({
+            arbitragemId: uuidv4(),
+            solicitante,
+            resultado,
+            placarNoMomento,
+            timestamp: new Date()
+        });
+        await partida.save();
+        res.json({ success: true, partida });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao salvar registro de arbitragem', error: error.message });
+    }
+});
+
 app.get('/api/partidas-list', async (req, res) => {
     try {
-        const partidas = await Partida.find({}, { configuracao: 1, createdAt: 1 }).lean();
+        const partidas = await Partida.find({}, { configuracao: 1, createdAt: 1, _id: 1 }).sort({ createdAt: -1 }).lean();
         const listaFormatada = partidas.map(p => {
             const playerA = p.configuracao?.playerAName || 'Jogador A';
             const playerB = p.configuracao?.playerBName || 'Jogador B';
             const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('pt-BR') : 'Data Desconhecida';
-            return {
-                id: p._id,
-                name: `${playerA} vs ${playerB} - ${date}`
-            };
+            return { id: p._id, name: `${playerA} vs ${playerB} - ${date}` };
         });
-        res.json(listaFormatada);
+        res.json({ success: true, partidas: listaFormatada });
     } catch (error) {
-        console.error("Erro ao buscar a lista de partidas:", error);
-        res.status(500).json({ message: "Erro ao buscar a lista de partidas.", error: error.message });
+        res.status(500).json({ success: false, message: "Erro ao buscar a lista de partidas.", error: error.message });
     }
 });
 
-// Rota para buscar uma partida por ID
 app.get('/api/partida/:id', async (req, res) => {
     try {
-        const partidaId = req.params.id;
-        const partida = await Partida.findById(partidaId).lean();
-        if (partida) {
-            res.json(partida);
-        } else {
-            res.status(404).json({ message: "Partida não encontrada." });
-        }
+        const partida = await Partida.findById(req.params.id).lean();
+        if (partida) res.json({ success: true, partida });
+        else res.status(404).json({ success: false, message: "Partida não encontrada." });
     } catch (error) {
-        console.error("Erro ao buscar a partida:", error);
-        res.status(500).json({ message: "Erro ao buscar a partida.", error: error.message });
+        res.status(500).json({ success: false, message: "Erro ao buscar a partida.", error: error.message });
     }
 });
 
-// --- FIM DOS NOVOS ENDPOINTS ---
-
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    console.log(`Abra o navegador em http://localhost:${PORT}`);
-});
+function formatarPlacarAtual(placarAtual, isTiebreak) {
+    const pontos = ["0", "15", "30", "40", "AD"];
+    const p1 = placarAtual.player1;
+    const p2 = placarAtual.player2;
+
+    if (isTiebreak) {
+        return { tipoPonto: `${p1 > p2 ? p1 : p2}`, placarFormatado: `${p1}-${p2}` };
+    }
+
+    let placarFormatado = `${pontos[p1]}-${pontos[p2]}`;
+    let tipoPonto = "Game";
+
+    if (p1 < 4 && p2 < 4) {
+        tipoPonto = pontos[Math.max(p1, p2)];
+    } else if (p1 === p2) {
+        placarFormatado = "40-40";
+        tipoPonto = "40";
+    } else if (p1 > p2) {
+        placarFormatado = "AD-40";
+        tipoPonto = "AD";
+    } else {
+        placarFormatado = "40-AD";
+        tipoPonto = "AD";
+    }
+
+    if ((p1 >= 4 && p1 >= p2 + 2) || (p2 >= 4 && p2 >= p1 + 2)) {
+        placarFormatado = "Game";
+        tipoPonto = "Game";
+    }
+
+    return { tipoPonto, placarFormatado };
+}
 
 function getSacador(partida) {
     const { playerAName, playerBName } = partida.configuracao;
-    const setAtual = partida.sets[partida.sets.length - 1];
-    const gamesDoSet = setAtual.games.filter(g => g.vencedor !== null);
-    const totalGamesDoSet = gamesDoSet.length;
+    if (partida.sets.length === 1 && partida.sets[0].games.length === 1) return playerAName;
 
-    if (setAtual.games[setAtual.games.length - 1]?.isTiebreak) {
-        const gameAtual = setAtual.games[setAtual.games.length - 1];
-        const totalPontos = gameAtual.placarGame.player1 + gameAtual.placarGame.player2;
+    const ultimoSet = partida.sets[partida.sets.length - 1];
+    const ultimoGame = ultimoSet.games[ultimoSet.games.length - 1];
 
-        if (totalPontos === 1) {
-            const sacadorGameAnterior = setAtual.games[setAtual.games.length - 2]?.sacador;
-            return sacadorGameAnterior === playerAName ? playerBName : playerAName;
-        }
-
-        const sacadorInicialTiebreak = setAtual.games[setAtual.games.length - 2]?.vencedor;
-        if (Math.floor(totalPontos / 2) % 2 === 0) {
-            return sacadorInicialTiebreak === playerAName ? playerBName : playerAName;
-        } else {
-            return sacadorInicialTiebreak;
-        }
+    if (ultimoSet.games.length === 1 && partida.sets.length > 1) {
+        const setAnterior = partida.sets[partida.sets.length - 2];
+        const ultimoSacadorDoSetAnterior = setAnterior.games[setAnterior.games.length - 1].sacador;
+        return ultimoSacadorDoSetAnterior === playerAName ? playerBName : playerAName;
     }
-
-    const ultimoSacador = setAtual.games[totalGamesDoSet - 1]?.sacador;
-    return (ultimoSacador === playerAName) ? playerBName : playerAName;
+    return ultimoGame.sacador === playerAName ? playerBName : playerAName;
 }
 
+function getSacadorTiebreak(gameAtual, setAtual, playerAName, playerBName, partida) {
+    const totalPontos = gameAtual.placarGame.player1 + gameAtual.placarGame.player2;
 
-function criarGame(partida, isTiebreak = false) {
-    let sacador;
-    if (partida.sets.length === 0 || partida.sets[partida.sets.length - 1].games.length === 0) {
-        sacador = partida.configuracao.playerAName;
+    let primeiroSacadorDoTiebreak;
+    if (gameAtual.isSuperTiebreak) {
+        primeiroSacadorDoTiebreak = getSacador(partida);
     } else {
-        sacador = getSacador(partida);
+        const sacadorGameAnterior = setAtual.games[setAtual.games.length - 2].sacador;
+        primeiroSacadorDoTiebreak = sacadorGameAnterior;
     }
-    return {
-        gameId: uuidv4(),
-        vencedor: null,
-        placarGame: { player1: 0, player2: 0 },
-        isTiebreak: isTiebreak,
-        sacador: sacador,
-        pontos: []
-    };
+
+    const oponente = primeiroSacadorDoTiebreak === playerAName ? playerBName : playerAName;
+
+    if (totalPontos === 0) {
+        return primeiroSacadorDoTiebreak;
+    }
+
+    if ((totalPontos - 1) % 4 < 2) {
+        return oponente;
+    } else {
+        return primeiroSacadorDoTiebreak;
+    }
+}
+
+function criarGame(partida, isTiebreak = false, isSuperTiebreak = false) {
+    const sacador = getSacador(partida);
+    return { gameId: uuidv4(), placarGame: { player1: 0, player2: 0 }, isTiebreak, isSuperTiebreak, sacador, pontos: [] };
 }
 
 function criarSet(partida, numeroSet) {
-    return {
-        numero: numeroSet,
-        vencedor: null,
-        games: [criarGame(partida)]
-    };
+    if (numeroSet === 1) {
+        const primeiroSacador = partida.configuracao.playerAName;
+        return { _id: uuidv4(), numero: 1, placarGames: { player1: 0, player2: 0 }, games: [{ gameId: uuidv4(), placarGame: { player1: 0, player2: 0 }, isTiebreak: false, isSuperTiebreak: false, sacador: primeiroSacador, pontos: [] }] };
+    }
+    return { _id: uuidv4(), numero: numeroSet, placarGames: { player1: 0, player2: 0 }, games: [criarGame(partida)] };
 }
 
 function checarFimDeGame(game) {
@@ -290,27 +369,28 @@ function checarFimDeGame(game) {
 }
 
 function checarFimDeTiebreak(game) {
+    const pontosNecessarios = game.isSuperTiebreak ? 10 : 7;
     const pA = game.placarGame.player1;
     const pB = game.placarGame.player2;
-    if ((pA >= 7 || pB >= 7) && Math.abs(pA - pB) >= 2) {
+    if ((pA >= pontosNecessarios || pB >= pontosNecessarios) && Math.abs(pA - pB) >= 2) {
         return pA > pB ? 'player1' : 'player2';
     }
     return null;
 }
 
-function checarFimDeSet(set, partidaConfig) {
-    const gamesA = set.games.filter(g => g.vencedor === partidaConfig.playerAName).length;
-    const gamesB = set.games.filter(g => g.vencedor === partidaConfig.playerBName).length;
-
-    if ((gamesA >= 6 || gamesB >= 6) && Math.abs(gamesA - gamesB) >= 2) {
-        return gamesA > gamesB ? 'player1' : 'player2';
-    }
+function checarFimDeSet(set, partida) {
+    const gamesA = set.placarGames.player1;
+    const gamesB = set.placarGames.player2;
 
     if (gamesA === 6 && gamesB === 6) {
-        return 'tiebreak';
+        return { vencedor: null, iniciarTiebreak: true, isSuperTiebreak: false };
     }
 
-    return null;
+    if ((gamesA >= 6 && (gamesA - gamesB >= 2 || gamesA === 7)) || (gamesB >= 6 && (gamesB - gamesA >= 2 || gamesB === 7))) {
+        return { vencedor: gamesA > gamesB ? 'player1' : 'player2', iniciarTiebreak: false };
+    }
+
+    return { vencedor: null, iniciarTiebreak: false };
 }
 
 function checarFimDePartida(partida) {
@@ -320,6 +400,5 @@ function checarFimDePartida(partida) {
 
     if (setsA >= setsParaVencer) return partida.configuracao.playerAName;
     if (setsB >= setsParaVencer) return partida.configuracao.playerBName;
-
     return null;
 }
