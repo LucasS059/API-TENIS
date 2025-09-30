@@ -150,15 +150,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 let gamePointsA = 0;
                 let gamePointsB = 0;
                 if (!game.pontos) return;
+                
+                const isTiebreakGame = game.isTiebreak || game.isSuperTiebreak; // Identifica Tiebreak/SuperTiebreak
+                
                 game.pontos.forEach(ponto => {
                     totalPoints++;
                     if (ponto.vencedor === players[0]) gamePointsA++;
                     else if (ponto.vencedor === players[1]) gamePointsB++;
+                    
                     let scoreA_display = 0, scoreB_display = 0;
-                    if (game.isTiebreak || game.isSuperTiebreak) {
+                    
+                    if (isTiebreakGame) {
+                        // **CORREÇÃO:** Usa a pontuação real do Tiebreak
                         scoreA_display = gamePointsA;
                         scoreB_display = gamePointsB;
                     } else {
+                        // Lógica de pontuação tradicional (0, 15, 30, 40, Adv, Game)
                         if (gamePointsA >= 4 && gamePointsA >= gamePointsB + 2) { scoreA_display = 5; } 
                         else if (gamePointsB >= 4 && gamePointsB >= gamePointsA + 2) { scoreB_display = 5; }
                         else if (gamePointsA >= 3 && gamePointsB >= 3) {
@@ -171,7 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     const winnerIsPlayerA = ponto.vencedor === players[0];
-                    combinedData.push({ x: totalPoints, score: winnerIsPlayerA ? scoreA_display : -scoreB_display, winner: ponto.vencedor });
+                    combinedData.push({ 
+                        x: totalPoints, 
+                        score: winnerIsPlayerA ? scoreA_display : -scoreB_display, 
+                        winner: ponto.vencedor,
+                        isTiebreak: isTiebreakGame // Adiciona a flag
+                    });
                 });
             });
             if (set.vencedor) { setBoundaries.push(totalPoints); }
@@ -183,30 +195,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, setBoundaries } = processPointsData(partidaData);
         if (!partidaData || !partidaData.configuracao) return;
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
+        
         if (!data || data.length === 0) {
             d3.select(id).html('<p>Dados insuficientes para gerar o gráfico de pontos.</p>');
             return;
         }
+        
+        // **CORREÇÃO (Parte 1): Determinar o domínio Y máximo**
+        const maxTiebreakScore = d3.max(data, d => {
+            return d.isTiebreak ? Math.abs(d.score) : 0;
+        }) || 0;
+        
+        // O domínio Y deve ser o maior entre a pontuação 'Game' (5) e a pontuação máxima do Tiebreak.
+        const maxDomainY = Math.max(5, maxTiebreakScore); 
+
         const margin = { top: 40, right: 40, bottom: 40, left: 80 };
         const chartHeight = 500 - margin.top - margin.bottom;
         const totalPoints = data.length;
         const pointWidth = 40;
         const actualChartWidth = Math.max(800, totalPoints * pointWidth);
+        
         d3.select(id).html('');
         const containerDiv = d3.select(id).append("div").style("overflow-x", "auto").style("width", "100%");
         const svg = containerDiv.append("svg").attr("width", actualChartWidth + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
         
         const x = d3.scaleLinear().range([0, actualChartWidth]).domain([0.5, totalPoints + 0.5]);
-        const y = d3.scaleLinear().range([chartHeight, 0]).domain([-5, 5]);
+        
+        // **CORREÇÃO (Parte 2): Usar o domínio Y dinâmico**
+        const y = d3.scaleLinear().range([chartHeight, 0]).domain([-maxDomainY, maxDomainY]);
+        
         const yAxisLabels = { 0: '0', 1: '15', 2: '30', 3: '40', 4: 'Vantagem', 5: 'Game' };
 
-        svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
-        svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]).tickFormat(d => yAxisLabels[Math.abs(d)] || ''));
+        // **CORREÇÃO (Parte 3): Criar um formato de tick customizado**
+        const yTickValues = d3.range(-maxDomainY, maxDomainY + 1).filter(d => d !== 0);
+        yTickValues.push(0); 
 
-        svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues([-5,-4,-3,-2,-1,1,2,3,4,5]).tickSize(-actualChartWidth).tickFormat(""));
+        const customYTickFormat = d => {
+            const absD = Math.abs(d);
+            // Se a pontuação for maior que a do 'Game' (5), mostra o número real (Tiebreak score)
+            if (absD > 5) {
+                return absD.toString();
+            }
+            // Caso contrário, mostra o rótulo tradicional
+            return yAxisLabels[absD] || '';
+        };
+
+        svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
         
-        svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(4)).text(players[0]);
-        svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-4)).text(players[1]);
+        // Usar o novo domínio e formatador de tick
+        svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(customYTickFormat));
+
+        // Desenha as linhas de grade para todas as pontuações válidas no eixo Y
+        svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues(yTickValues.filter(d => d !== 0)).tickSize(-actualChartWidth).tickFormat(""));
+        
+        // Ajusta a posição do label dos jogadores para os limites do novo eixo Y
+        svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(maxDomainY - 1)).text(players[0]);
+        svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-(maxDomainY - 1))).text(players[1]);
 
         setBoundaries.forEach(boundary => {
             svg.append("line").attr("class", "set-boundary").attr("x1", x(boundary + 0.5)).attr("y1", 0).attr("x2", x(boundary + 0.5)).attr("y2", chartHeight).style("stroke", "var(--primary-color)").style("stroke-width", "2px").style("stroke-dasharray", "5,5");
