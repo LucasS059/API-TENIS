@@ -1,5 +1,5 @@
 MongoDB.txt
 .vscode
 node_modules/
-
+.env
 BACKUP_RADIAL/
