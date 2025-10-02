@@ -120,14 +120,9 @@
                                     <option value="3">Melhor de 3</option>
                                     <option value="5">Melhor de 5</option>
                                 </select></div>
-                            <div class="mb-3">
-                                <label for="formatoSetDecisivo" class="form-label">Formato do Set Decisivo</label>
-                                <select class="form-select" id="formatoSetDecisivo">
-                                    <option value="tiebreak" selected>Set Normal com Tiebreak (em 6-6)</option>
-                                    <option value="vantagem">Set de Vantagem (sem tiebreak)</option>
-                                    <option value="supertiebreak">Super Tiebreak (substitui o set)</option>
-                                </select>
-                            </div>
+                            <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox"
+                                    role="switch" id="superTiebreak" checked><label class="form-check-label"
+                                    for="superTiebreak">Usar Super Tie-break no set decisivo</label></div>
                             <button type="submit" class="btn btn-primary w-100">Iniciar Partida</button>
                         </form>
                     </div>
@@ -142,134 +137,88 @@
                         <h5 class="modal-title w-100 text-center" id="pontoModalTitle">Avaliação do Ponto</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body text-center">
+                   <div class="modal-body text-center">
 
-                        <div class="mb-4 modal-section" data-secao="resultadoPonto">
-                            <h4 class="section-title" id="resultadoPontoTitle">How was the point won or lost</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-4 d-none option-resultado" data-valor="Winner"><button
-                                        class="btn btn-personalizado w-100">Winner</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Ace"><button
-                                        class="btn btn-personalizado w-100">Ace</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Forced Error (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Forced Error (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Unforced Error (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Double Fault (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Double Fault (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error"><button
-                                        class="btn btn-personalizado w-100">Unforced Error</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Forced Error"><button
-                                        class="btn btn-personalizado w-100">Forced Error</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Double Fault"><button
-                                        class="btn btn-personalizado w-100">Double Fault</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Winner (Oponente)"><button
-                                        class="btn btn-personalizado w-100">Winner (do Oponente)</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Ace (Oponente)"><button
-                                        class="btn btn-personalizado w-100">Ace (do Oponente)</button></div>
-                            </div>
-                        </div>
-                        <hr>
+    <div class="mb-4 modal-section" data-secao="resultadoPonto">
+        <h4 class="section-title" id="resultadoPontoTitle">How was the point won or lost</h4>
+        <div class="row g-2 justify-content-center">
+            <div class="col-md-4 d-none option-resultado" data-valor="Winner"><button class="btn btn-personalizado w-100">Winner</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Ace"><button class="btn btn-personalizado w-100">Ace</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Forced Error (Oponente)"><button class="btn btn-personalizado w-100">Forced Error (do Oponente)</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error (Oponente)"><button class="btn btn-personalizado w-100">Unforced Error (do Oponente)</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Double Fault (Oponente)"><button class="btn btn-personalizado w-100">Double Fault (do Oponente)</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error"><button class="btn btn-personalizado w-100">Unforced Error</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Forced Error"><button class="btn btn-personalizado w-100">Forced Error</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Double Fault"><button class="btn btn-personalizado w-100">Double Fault</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Winner (Oponente)"><button class="btn btn-personalizado w-100">Winner (do Oponente)</button></div>
+            <div class="col-md-4 d-none option-resultado" data-valor="Ace (Oponente)"><button class="btn btn-personalizado w-100">Ace (do Oponente)</button></div>
+        </div>
+    </div>
+    <hr>
 
-                        <div class="mb-4 modal-section" data-secao="golpe">
-                            <h4 class="section-title">Forehand / Backhand</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Forehand">Forehand</button></div>
-                                <div class="col-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Backhand">Backhand</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="tipoShot">
-                            <h4 class="section-title">Type of Shot</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Regular">Regular</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Passing">Passing</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Approach">Approach</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Slice">Slice</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Volley">Volley</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Drop Shot">Drop Shot</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Lob">Lob</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Overhead">Overhead</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="shotLocation">
-                            <h4 class="section-title">Shot Location</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Cross Court">Cross court</button></div>
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Middle">Middle</button></div>
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Down the Line">Down the Line</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="rallyLength">
-                            <h4 class="section-title">Rally length</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="0">0</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="1">1</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="2">2</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="3">3</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="4">4</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="5">5</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="6">6</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="7">7</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="8+">8+</button>
-                                </div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="ritual" data-multiselect="true">
-                            <h4 class="section-title">1. Ritual e Rotina</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ir à toalha entre pontos">Ir à toalha entre pontos</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Demorar excessivamente entre pontos">Demorar excessivamente entre
-                                        pontos (fuga/quebra de ritmos)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Trocar a raquete para a mão não dominante">Trocar a raquete para a
-                                        mão não dominante (descanso, relaxamento do braço)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Mantém a raquete na mão dominante">Mantém a raquete na mão dominante
-                                        (braço em uso contínuo, maior probabilidade de tensão ou fadiga)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ritual pré-ponto">Ritual pré-ponto (quicar bola, ajeitar cordas,
-                                        mexer na camiseta, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Gestos de desequilíbrio ou fraqueza">Gestos de desequilíbrio ou
-                                        fraqueza (gesticular excessivamente, arrastar os pés, corpo mole)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Respiração profunda pelo nariz">Respiração profunda pelo
-                                        nariz</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Respiração ofegante pela boca">Respiração ofegante pela
-                                        boca</button></div>
-                            </div>
-                        </div>
+    <div class="radial-menu-container">
+        <button id="radial-menu-toggle">Análise Comportamental</button>
+        <ul id="radial-menu" class="radial-menu"></ul>
+    </div>
+    
+    <div id="behavioral-sections-container">
+        <hr>
+        <div class="mb-4 modal-section" data-secao="golpe" style="display: none;">
+            <h4 class="section-title">Forehand / Backhand</h4>
+            <div class="row g-2 justify-content-center">
+                <div class="col-6"><button class="btn btn-personalizado w-100" data-valor="Forehand">Forehand</button></div>
+                <div class="col-6"><button class="btn btn-personalizado w-100" data-valor="Backhand">Backhand</button></div>
+            </div>
+        </div>
+        <div class="mb-4 modal-section" data-secao="tipoShot" style="display: none;">
+            <h4 class="section-title">Type of Shot</h4>
+            <div class="row g-2 justify-content-center">
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Regular">Regular</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Passing">Passing</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Approach">Approach</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Slice">Slice</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Volley">Volley</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Drop Shot">Drop Shot</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Lob">Lob</button></div>
+                <div class="col-md-3"><button class="btn btn-personalizado w-100" data-valor="Overhead">Overhead</button></div>
+            </div>
+        </div>
+        <div class="mb-4 modal-section" data-secao="shotLocation" style="display: none;">
+            <h4 class="section-title">Shot Location</h4>
+            <div class="row g-2 justify-content-center">
+                <div class="col-4"><button class="btn btn-personalizado w-100" data-valor="Cross Court">Cross court</button></div>
+                <div class="col-4"><button class="btn btn-personalizado w-100" data-valor="Middle">Middle</button></div>
+                <div class="col-4"><button class="btn btn-personalizado w-100" data-valor="Down the Line">Down the Line</button></div>
+            </div>
+        </div>
+        <div class="mb-4 modal-section" data-secao="rallyLength" style="display: none;">
+            <h4 class="section-title">Rally length</h4>
+            <div class="row g-2 justify-content-center">
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="0">0</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="1">1</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="2">2</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="3">3</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="4">4</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="5">5</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="6">6</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="7">7</button></div>
+                <div class="col-auto"><button class="btn btn-personalizado" data-valor="8+">8+</button></div>
+            </div>
+        </div>
+        <div class="mb-4 modal-section" data-secao="ritual" data-multiselect="true" style="display: none;">
+            <h4 class="section-title">1. Ritual e Rotina</h4>
+            <div class="row g-2">
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Ir à toalha entre pontos">Ir à toalha entre pontos</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Demorar excessivamente entre pontos">Demorar excessivamente entre pontos (fuga/quebra de ritmos)</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Trocar a raquete para a mão não dominante">Trocar a raquete para a mão não dominante (descanso, relaxamento do braço)</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Mantém a raquete na mão dominante">Mantém a raquete na mão dominante (braço em uso contínuo, maior probabilidade de tensão ou fadiga)</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Ritual pré-ponto">Ritual pré-ponto (quicar bola, ajeitar cordas, mexer na camiseta, etc)</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Gestos de desequilíbrio ou fraqueza">Gestos de desequilíbrio ou fraqueza (gesticular excessivamente, arrastar os pés, corpo mole)</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Respiração profunda pelo nariz">Respiração profunda pelo nariz</button></div>
+                <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Respiração ofegante pela boca">Respiração ofegante pela boca</button></div>
+            </div>
+        </div>
+        </div>
                         <hr>
                         <div class="mb-4 modal-section" data-secao="linguagemCorporal" data-multiselect="true">
                             <h4 class="section-title">2. Linguagem Corporal</h4>
@@ -546,7 +495,7 @@
             </div>
         </div>
     </div>
-    <script src="/assets/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 

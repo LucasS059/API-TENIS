@@ -75,23 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
             tbJogadorANome: document.getElementById('tb-jogador-a-nome'),
             tbJogadorBNome: document.getElementById('tb-jogador-b-nome'),
             jogadorAvaliadoDisplay: document.getElementById('jogadorAvaliadoDisplay'),
+            // Elementos do Menu Radial
+            radialMenuToggle: document.getElementById('radial-menu-toggle'),
+            radialMenu: document.getElementById('radial-menu'),
+            behavioralSectionsContainer: document.getElementById('behavioral-sections-container')
         },
         abrirModal: (modal) => modal.show(),
         fecharModal(modal) {
             modal.hide();
             setTimeout(() => {
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                backdrops.forEach((backdrop, index) => {
-                    if (index > 0 || !document.querySelector('.modal.show')) {
-                        backdrop.remove();
-                    }
-                });
-                if (!document.querySelector('.modal.show')) {
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                }
-            }, 500);
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 400);
         },
         mostrarConfirmacao(mensagem) {
             this.elements.mensagemConfirmacao.textContent = mensagem;
@@ -120,16 +118,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#saque-selector .btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector('#saque-selector .btn[data-saque="First Serve"]').classList.add('active');
         },
-        resetPlacarUI() {
-            document.querySelectorAll('.set-score').forEach(cell => {
-                cell.textContent = '0';
-            });
-            this.elements.gameJogadorA.textContent = '0';
-            this.elements.gameJogadorB.textContent = '0';
-            this.elements.placarDisplay.style.display = 'grid';
-            this.elements.tiebreakContainer.style.display = 'none';
-        },
         setupPontoModal(isWinContext, isAnalyzedPlayerServing, lastAnswers) {
+            // ... (código existente da função, com uma adição) ...
+            
+            // ADIÇÃO: Garante que as seções de comportamento e o menu radial estejam no estado inicial
+            this.elements.behavioralSectionsContainer.style.display = 'none';
+            document.querySelectorAll('#behavioral-sections-container .modal-section').forEach(sec => sec.style.display = 'none');
+            this.elements.radialMenu.classList.remove('open');
+
+            // O resto do código da função continua aqui...
             const { pontoModalTitle, resultadoPontoTitle } = this.elements;
             pontoModalTitle.textContent = 'Avaliação do Ponto';
             if (isWinContext) {
@@ -144,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const valores = lastAnswers[secao];
                 if (Array.isArray(valores)) {
                     valores.forEach(valor => {
-                        if (!valor) return;
+                         if (!valor) return;
                         const secaoDiv = document.querySelector(`#meuModal [data-secao="${secao}"]`);
                         if (!secaoDiv) return;
                         let elementoAtivavel;
@@ -177,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         atualizarPlacar(partida) {
+            // Nenhuma mudança necessária aqui
             if (!partida) return;
             const { playerAName, playerBName, jogadorAvaliado, numSets } = partida.configuracao;
             this.gerenciarColunasSet(numSets);
@@ -184,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.nomeJogadorB.innerHTML = `${playerBName} <span id="saqueJogadorB"></span>`;
             const jogadorAvaliadoNome = (jogadorAvaliado === 'player1') ? playerAName : playerBName;
             this.elements.jogadorAvaliadoDisplay.innerHTML = `Analisando: <strong>${jogadorAvaliadoNome}</strong>`;
-
             partida.sets.forEach((set, i) => {
                 const setCellA = document.querySelector(`#placarJogadorA [data-set="${i + 1}"]`);
                 const setCellB = document.querySelector(`#placarJogadorB [data-set="${i + 1}"]`);
@@ -193,61 +190,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     setCellB.textContent = set.placarGames.player2;
                 }
             });
-
-            const btnArbitragem = document.getElementById('btnAbrirModalArbitragem');
-            
-            const setFinalizadoPendente = partida.sets.find(s => s.vencedor && !s.modalRespostasSet);
-
-            if (setFinalizadoPendente) {
-                appState.setIDParaComportamento = setFinalizadoPendente._id;
+            const setFinalizado = partida.sets.find(s => s.vencedor && !s.modalRespostasSet);
+            if (setFinalizado) {
+                appState.setIDParaComportamento = setFinalizado._id;
                 this.abrirModal(this.elements.setModal);
-            } 
-            else if (partida.vencedor) {
-                this.elements.nomeVencedor.textContent = partida.vencedor;
-                this.abrirModal(this.elements.vencedorModal);
-                btnArbitragem.disabled = true;
-                this.alternarBotoesDePonto(false);
-                return;
             }
-
-            if (partida.vencedor) {
-                btnArbitragem.disabled = true;
-                this.alternarBotoesDePonto(false);
-            } else {
-                btnArbitragem.disabled = false;
-                this.alternarBotoesDePonto(true);
-            }
-
             const setAtual = partida.sets[partida.sets.length - 1];
             if (!setAtual || setAtual.games.length === 0) {
                 this.alternarBotoesDePonto(false);
                 return;
             };
-
             const gameAtual = setAtual.games[setAtual.games.length - 1];
             const { player1: placarA, player2: placarB } = gameAtual.placarGame;
-
-            // ### LÓGICA DO TIE-BREAK REFORÇADA E COM DIAGNÓSTICO ###
             if (gameAtual.isTiebreak || gameAtual.isSuperTiebreak) {
-                
-                // Linhas de diagnóstico (visíveis no console do navegador com F12)
-                console.log("Modo Tie-break/Super Tie-break ativado.");
-                console.log("Dados do game atual:", JSON.parse(JSON.stringify(gameAtual)));
-                console.log(`Placar recebido: ${playerAName} ${placarA} x ${placarB} ${playerBName}`);
-
                 this.elements.tiebreakContainer.style.display = 'block';
                 this.elements.placarDisplay.style.display = 'none';
                 this.elements.tiebreakTitle.textContent = gameAtual.isSuperTiebreak ? 'Super Tie-break!' : 'Tie-break!';
                 this.elements.tiebreakRulesText.textContent = gameAtual.isSuperTiebreak ? 'Vence quem fizer 10 pontos (com 2 de vantagem).' : 'Vence quem fizer 7 pontos (com 2 de vantagem). O saque troca a cada 2 pontos após o primeiro.';
-                
-                // Atualiza o placar visual dentro da caixa de tie-break
-                this.elements.tbScoreA.textContent = String(placarA);
-                this.elements.tbScoreB.textContent = String(placarB);
-                
-                // Atualiza o texto dos botões de ponto
-                this.elements.btnPontoJogadorA.textContent = String(placarA);
-                this.elements.btnPontoJogadorB.textContent = String(placarB);
-                
+                this.elements.tbScoreA.textContent = placarA;
+                this.elements.tbScoreB.textContent = placarB;
+                this.elements.btnPontoJogadorA.textContent = placarA;
+                this.elements.btnPontoJogadorB.textContent = placarB;
                 this.elements.tbJogadorANome.innerHTML = `${playerAName} <span id="tb-saque-a"></span>`;
                 this.elements.tbJogadorBNome.innerHTML = `${playerBName} <span id="tb-saque-b"></span>`;
                 document.getElementById('tb-saque-a').textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
@@ -259,20 +222,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('saqueJogadorB').textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
                 if (placarA >= 3 && placarB >= 3) {
                     if (placarA === placarB) {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = '40';
-                        this.elements.btnPontoJogadorA.textContent = '40';
-                        this.elements.btnPontoJogadorB.textContent = '40';
+                        this.elements.gameJogadorA.textContent = '40'; this.elements.gameJogadorB.textContent = '40';
+                        this.elements.btnPontoJogadorA.textContent = '40'; this.elements.btnPontoJogadorB.textContent = '40';
                     } else if (placarA > placarB) {
-                        this.elements.gameJogadorA.textContent = 'A';
-                        this.elements.gameJogadorB.textContent = '40';
-                        this.elements.btnPontoJogadorA.textContent = 'A';
-                        this.elements.btnPontoJogadorB.textContent = '40';
+                        this.elements.gameJogadorA.textContent = 'A'; this.elements.gameJogadorB.textContent = '40';
+                        this.elements.btnPontoJogadorA.textContent = 'A'; this.elements.btnPontoJogadorB.textContent = '40';
                     } else {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = 'A';
-                        this.elements.btnPontoJogadorA.textContent = '40';
-                        this.elements.btnPontoJogadorB.textContent = 'A';
+                        this.elements.gameJogadorA.textContent = '40'; this.elements.gameJogadorB.textContent = 'A';
+                        this.elements.btnPontoJogadorA.textContent = '40'; this.elements.btnPontoJogadorB.textContent = 'A';
                     }
                 } else {
                     this.elements.gameJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
@@ -281,23 +238,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.elements.btnPontoJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
                 }
             }
+            this.alternarBotoesDePonto(!partida.vencedor);
+            const btnArbitragem = document.getElementById('btnAbrirModalArbitragem');
+            if (partida.vencedor) {
+                this.elements.nomeVencedor.textContent = partida.vencedor;
+                this.abrirModal(this.elements.vencedorModal);
+                btnArbitragem.disabled = true;
+            } else {
+                btnArbitragem.disabled = false;
+            }
         }
     };
 
     const app = {
         async iniciarPartida() {
+             // Nenhuma mudança necessária aqui
             const config = {
                 playerAName: document.getElementById('player1').value || 'Jogador A',
                 playerBName: document.getElementById('player2').value || 'Jogador B',
                 numSets: parseInt(document.getElementById('numSets').value),
                 jogadorAvaliado: document.getElementById('jogadorAvaliado').value,
-                formatoSetDecisivo: document.getElementById('formatoSetDecisivo').value
+                superTiebreak: document.getElementById('superTiebreak').checked
             };
             document.activeElement.blur();
             const response = await api.iniciarPartida(config);
             if (response && response.partida) {
                 ui.fecharModal(ui.elements.configModal);
-                ui.resetPlacarUI();
                 appState.partida = response.partida;
                 appState.lastWinAnswers = {};
                 appState.lastLossAnswers = {};
@@ -306,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         async registrarPonto() {
+            // Nenhuma mudança necessária aqui
             if (!appState.partida || appState.partida.vencedor) return;
             const pontoData = { vencedor: appState.jogadorAtual, modalRespostas: {} };
             document.querySelectorAll('#meuModal .modal-section').forEach(secao => {
@@ -321,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const jogadorAvaliadoKey = appState.partida.configuracao.jogadorAvaliado;
             const jogadorAvaliadoName = (jogadorAvaliadoKey === 'player1') ? appState.partida.configuracao.playerAName : appState.partida.configuracao.playerBName;
             const isWinContext = (appState.jogadorAtual === jogadorAvaliadoName);
-            if (isWinContext) { appState.lastWinAnswers = { ...pontoData.modalRespostas }; }
+            if (isWinContext) { appState.lastWinAnswers = { ...pontoData.modalRespostas }; } 
             else { appState.lastLossAnswers = { ...pontoData.modalRespostas }; }
             const response = await api.registrarPonto(appState.partida._id, pontoData);
             if (response && response.partida) {
@@ -336,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         },
+        // ... (as outras funções como registrarComportamentoVirada, etc. permanecem iguais)
         async registrarComportamentoVirada() {
             const modalRespostasVirada = {};
             document.querySelectorAll('#viradaModal .active').forEach(btn => {
@@ -363,13 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalRespostasSet[secao].push(btn.dataset.valor);
             });
             const response = await api.registrarComportamentoSet(appState.partida._id, appState.setIDParaComportamento, { modalRespostasSet });
-            if (response && response.partida) {
-                const setIndex = appState.partida.sets.findIndex(s => s._id === appState.setIDParaComportamento);
-                if (setIndex !== -1) {
-                    appState.partida.sets[setIndex].modalRespostasSet = modalRespostasSet;
-                }
-                appState.partida = response.partida;
-            }
+            if (response && response.partida) appState.partida = response.partida;
         },
         async registrarArbitragem() {
             const solicitanteBtn = document.querySelector('#arbitragemModal [data-secao="arbitragem_solicitante"] .active');
@@ -401,12 +363,83 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             ui.alternarBotoesDePonto(false);
 
-            ui.elements.configForm.addEventListener('submit', (e) => { e.preventDefault(); this.iniciarPartida(); });
-            ui.elements.btnNovaPartida.addEventListener('click', () => {
-                ui.fecharModal(ui.elements.vencedorModal);
-                ui.abrirModal(ui.elements.configModal);
+            // ========================================================================
+            // INICIALIZAÇÃO DO MENU RADIAL
+            // ========================================================================
+            const menuItems = [
+                { id: 'golpe', text: 'Golpe' },
+                { id: 'tipoShot', text: 'Tipo' },
+                { id: 'shotLocation', text: 'Local' },
+                { id: 'rallyLength', text: 'Rally' },
+                { id: 'ritual', text: 'Ritual' },
+                { id: 'linguagemCorporal', text: 'Corporal' },
+                { id: 'expressaoEmocional', text: 'Emoção' },
+                { id: 'monologo', text: 'Monólogo' }
+            ];
+
+            const toggleButton = ui.elements.radialMenuToggle;
+            const menu = ui.elements.radialMenu;
+            
+            toggleButton.addEventListener('click', () => {
+                menu.classList.toggle('open');
+                
+                const items = menu.querySelectorAll('.radial-menu-item');
+                if (menu.classList.contains('open')) {
+                    const angle = 360 / items.length;
+                    items.forEach((item, index) => {
+                        const rotation = angle * index;
+                        const radius = 120; // Distância do centro
+                        const x = radius * Math.cos((rotation - 90) * (Math.PI / 180));
+                        const y = radius * Math.sin((rotation - 90) * (Math.PI / 180));
+                        item.style.transform = `translate(${x}px, ${y}px)`;
+                    });
+                } else {
+                    items.forEach(item => {
+                        item.style.transform = 'translate(0, 0)';
+                    });
+                }
             });
 
+            menuItems.forEach(itemData => {
+                const li = document.createElement('li');
+                li.className = 'radial-menu-item';
+
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = itemData.text;
+                a.dataset.secao = itemData.id;
+
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    // Mostra o container principal das seções
+                    ui.elements.behavioralSectionsContainer.style.display = 'block';
+
+                    // Esconde todas as seções de comportamento
+                    document.querySelectorAll('#behavioral-sections-container .modal-section').forEach(sec => {
+                        sec.style.display = 'none';
+                    });
+                    
+                    // Mostra a seção clicada
+                    const targetSection = document.querySelector(`.modal-section[data-secao="${itemData.id}"]`);
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                    }
+
+                    // Fecha o menu radial
+                    menu.classList.remove('open');
+                    menu.querySelectorAll('.radial-menu-item').forEach(item => {
+                        item.style.transform = 'translate(0, 0)';
+                    });
+                });
+                li.appendChild(a);
+                menu.appendChild(li);
+            });
+            // ========================================================================
+
+            // Event Listeners existentes
+            ui.elements.configForm.addEventListener('submit', (e) => { e.preventDefault(); this.iniciarPartida(); });
+            ui.elements.btnNovaPartida.addEventListener('click', () => { ui.fecharModal(ui.elements.vencedorModal); ui.abrirModal(ui.elements.configModal); });
             ['btnPontoJogadorA', 'btnPontoJogadorB'].forEach(id => {
                 ui.elements[id].addEventListener('click', () => {
                     if (!appState.partida) return;
@@ -424,56 +457,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.abrirModal(ui.elements.pontoModal);
                 });
             });
-
             document.querySelectorAll('#saque-selector .btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('#saque-selector .btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
                 });
             });
-
             ui.elements.btnSalvarModal.addEventListener('click', () => { ui.fecharModal(ui.elements.pontoModal); this.registrarPonto(); });
-            
-            ui.elements.btnSalvarSet.addEventListener('click', async () => {
-                ui.fecharModal(ui.elements.setModal);
-                await this.registrarComportamentoSet();
-
-                if (appState.partida && appState.partida.vencedor) {
-                    const algumSetPendente = appState.partida.sets.some(s => s.vencedor && !s.modalRespostasSet);
-                    if (!algumSetPendente) {
-                        ui.elements.nomeVencedor.textContent = appState.partida.vencedor;
-                        ui.abrirModal(ui.elements.vencedorModal);
-                    }
-                }
-            });
-
+            ui.elements.btnSalvarSet.addEventListener('click', () => { ui.fecharModal(ui.elements.setModal); this.registrarComportamentoSet(); });
             ui.elements.btnSalvarArbitragem.addEventListener('click', () => this.registrarArbitragem());
             ui.elements.btnSalvarVirada.addEventListener('click', () => this.registrarComportamentoVirada());
 
-            document.querySelectorAll('.modal-section .btn, .option-resultado').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    if (e.currentTarget.closest('.modal-footer') || e.currentTarget.classList.contains('btn-close')) {
-                        return;
-                    }
+            document.querySelectorAll('.modal-section .btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.currentTarget.closest('.modal-footer') || e.currentTarget.classList.contains('btn-close')) { return; }
                     const secaoDiv = e.currentTarget.closest('.modal-section');
                     if (!secaoDiv) return;
-
-                    const elementoAtivavel = e.currentTarget.classList.contains('option-resultado') ? e.currentTarget : e.currentTarget;
-                    if (!elementoAtivavel) return;
-
+                    let elementoAtivavel = e.currentTarget;
+                    if (secaoDiv.dataset.secao === 'resultadoPonto') { elementoAtivavel = e.currentTarget.closest('.option-resultado'); }
                     const isMultiSelect = secaoDiv.dataset.multiselect === 'true';
                     const estavaAtivo = elementoAtivavel.classList.contains('active');
-
-                    if (isMultiSelect) {
-                        elementoAtivavel.classList.toggle('active');
-                    } else {
-                        if (estavaAtivo) {
-                            elementoAtivavel.classList.remove('active');
-                        } else {
-                            secaoDiv.querySelectorAll('.active').forEach(activeEl => activeEl.classList.remove('active'));
-                            elementoAtivavel.classList.add('active');
-                        }
-                    }
+                    if (!isMultiSelect) { secaoDiv.querySelectorAll('.active').forEach(el => el.classList.remove('active')); }
+                    if (!estavaAtivo || isMultiSelect) { elementoAtivavel.classList.toggle('active'); }
                 });
             });
 
@@ -498,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         button.dataset.valor = playerName;
                         button.textContent = playerName;
                         button.addEventListener('click', (e) => {
-                            solicitanteOptionsDiv.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                            solicitanteOptionsDiv.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
                             e.currentTarget.classList.add('active');
                             quemSolicitouSection.style.display = 'none';
                             opcoesArbitragemSection.style.display = 'block';

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getPropertyCaseInsensitive(obj, key) {
-        if(!obj || !key) return undefined;
+        if (!obj || !key) return undefined;
         const asLowercase = key.toLowerCase();
         const keyFound = Object.keys(obj).find(k => k.toLowerCase() === asLowercase);
         return keyFound ? obj[keyFound] : undefined;
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (sentiment === "negativo") negativeCounts["Arbitragem"]++;
             });
         }
-        const aggregatedData = [{ series: "Positivo", values: categorias.map(cat => ({ axis: cat, value: positiveCounts[cat] })) },{ series: "Negativo", values: categorias.map(cat => ({ axis: cat, value: negativeCounts[cat] })) }];
+        const aggregatedData = [{ series: "Positivo", values: categorias.map(cat => ({ axis: cat, value: positiveCounts[cat] })) }, { series: "Negativo", values: categorias.map(cat => ({ axis: cat, value: negativeCounts[cat] })) }];
         const maxCounts = d3.max(aggregatedData, d => d3.max(d.values, v => v.value)) || 0;
         radarChartConfig.maxValue = Math.max(1, maxCounts);
         radarChartConfig.color = d3.scaleOrdinal().domain(["Positivo", "Negativo"]).range(["#2ca02c", "#d62728"]);
@@ -150,23 +150,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 let gamePointsA = 0;
                 let gamePointsB = 0;
                 if (!game.pontos) return;
-                
-                const isTiebreakGame = game.isTiebreak || game.isSuperTiebreak; // Identifica Tiebreak/SuperTiebreak
-                
+
+                const isTiebreakGame = game.isTiebreak || game.isSuperTiebreak;
+
                 game.pontos.forEach(ponto => {
                     totalPoints++;
                     if (ponto.vencedor === players[0]) gamePointsA++;
                     else if (ponto.vencedor === players[1]) gamePointsB++;
-                    
+
                     let scoreA_display = 0, scoreB_display = 0;
-                    
+
                     if (isTiebreakGame) {
-                        // **CORREÇÃO:** Usa a pontuação real do Tiebreak
                         scoreA_display = gamePointsA;
                         scoreB_display = gamePointsB;
                     } else {
-                        // Lógica de pontuação tradicional (0, 15, 30, 40, Adv, Game)
-                        if (gamePointsA >= 4 && gamePointsA >= gamePointsB + 2) { scoreA_display = 5; } 
+                        if (gamePointsA >= 4 && gamePointsA >= gamePointsB + 2) { scoreA_display = 5; }
                         else if (gamePointsB >= 4 && gamePointsB >= gamePointsA + 2) { scoreB_display = 5; }
                         else if (gamePointsA >= 3 && gamePointsB >= 3) {
                             if (gamePointsA === gamePointsB) { scoreA_display = 3; scoreB_display = 3; }
@@ -178,9 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     const winnerIsPlayerA = ponto.vencedor === players[0];
-                    combinedData.push({ 
-                        x: totalPoints, 
-                        score: winnerIsPlayerA ? scoreA_display : -scoreB_display, 
+                    combinedData.push({
+                        x: totalPoints,
+                        score: winnerIsPlayerA ? scoreA_display : -scoreB_display,
                         winner: ponto.vencedor,
                         isTiebreak: isTiebreakGame // Adiciona a flag
                     });
@@ -195,60 +193,51 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, setBoundaries } = processPointsData(partidaData);
         if (!partidaData || !partidaData.configuracao) return;
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
-        
+
         if (!data || data.length === 0) {
             d3.select(id).html('<p>Dados insuficientes para gerar o gráfico de pontos.</p>');
             return;
         }
-        
-        // **CORREÇÃO (Parte 1): Determinar o domínio Y máximo**
+
         const maxTiebreakScore = d3.max(data, d => {
             return d.isTiebreak ? Math.abs(d.score) : 0;
         }) || 0;
-        
-        // O domínio Y deve ser o maior entre a pontuação 'Game' (5) e a pontuação máxima do Tiebreak.
-        const maxDomainY = Math.max(5, maxTiebreakScore); 
+
+        const maxDomainY = Math.max(5, maxTiebreakScore);
 
         const margin = { top: 40, right: 40, bottom: 40, left: 80 };
         const chartHeight = 500 - margin.top - margin.bottom;
         const totalPoints = data.length;
         const pointWidth = 40;
         const actualChartWidth = Math.max(800, totalPoints * pointWidth);
-        
+
         d3.select(id).html('');
         const containerDiv = d3.select(id).append("div").style("overflow-x", "auto").style("width", "100%");
         const svg = containerDiv.append("svg").attr("width", actualChartWidth + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-        
+
         const x = d3.scaleLinear().range([0, actualChartWidth]).domain([0.5, totalPoints + 0.5]);
-        
-        // **CORREÇÃO (Parte 2): Usar o domínio Y dinâmico**
+
         const y = d3.scaleLinear().range([chartHeight, 0]).domain([-maxDomainY, maxDomainY]);
-        
+
         const yAxisLabels = { 0: '0', 1: '15', 2: '30', 3: '40', 4: 'Vantagem', 5: 'Game' };
 
-        // **CORREÇÃO (Parte 3): Criar um formato de tick customizado**
         const yTickValues = d3.range(-maxDomainY, maxDomainY + 1).filter(d => d !== 0);
-        yTickValues.push(0); 
+        yTickValues.push(0);
 
         const customYTickFormat = d => {
             const absD = Math.abs(d);
-            // Se a pontuação for maior que a do 'Game' (5), mostra o número real (Tiebreak score)
             if (absD > 5) {
                 return absD.toString();
             }
-            // Caso contrário, mostra o rótulo tradicional
             return yAxisLabels[absD] || '';
         };
 
         svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
-        
-        // Usar o novo domínio e formatador de tick
+
         svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(customYTickFormat));
 
-        // Desenha as linhas de grade para todas as pontuações válidas no eixo Y
         svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues(yTickValues.filter(d => d !== 0)).tickSize(-actualChartWidth).tickFormat(""));
-        
-        // Ajusta a posição do label dos jogadores para os limites do novo eixo Y
+
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(maxDomainY - 1)).text(players[0]);
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-(maxDomainY - 1))).text(players[1]);
 
@@ -264,12 +253,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processStatsData(partidaData) {
-        if (!partidaData || !Array.isArray(partidaData.sets)) return null;
+        if (!partidaData || !Array.isArray(partidaData.sets) || !partidaData.configuracao) return null;
+
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
         const stats = {};
+
         players.forEach(p => {
-            stats[p] = { aces: 0, winners: 0, unforcedErrors: 0, doubleFaults: 0, forcedErrors: 0, firstServeAttempted: 0, firstServeMade: 0, secondServeAttempted: 0, secondServeWon: 0, totalPointsWon: 0 };
+            stats[p] = {
+                aces: 0, winners: 0, unforcedErrors: 0, forcedErrors: 0,
+                doubleFaults: 0, firstServeAttempted: 0, firstServeMade: 0,
+                secondServeAttempted: 0, secondServeWon: 0, totalPointsWon: 0
+            };
         });
+
         partidaData.sets.forEach(set => {
             if (!set.games) return;
             set.games.forEach(game => {
@@ -279,44 +275,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     const vencedor = ponto.vencedor;
                     const perdedor = (vencedor === players[0]) ? players[1] : players[0];
                     const sacador = ponto.sacador;
-                    
+
                     if (vencedor) stats[vencedor].totalPointsWon++;
-                    
+
                     const resultadoArr = getPropertyCaseInsensitive(modal, 'resultadoPonto');
-                    if (!resultadoArr || resultadoArr.length === 0) return;
-                    
+                    if (!resultadoArr || resultadoArr.length === 0 || !resultadoArr[0]) return;
+
                     const resultado = resultadoArr[0];
-                    
-                    // --- LÓGICA CORRIGIDA ---
+
                     switch (resultado) {
                         case 'Ace':
-                        case 'Ace (Oponente)':
-                            if (vencedor) stats[vencedor].aces++;
-                            break;
                         case 'Winner':
+                        case 'Ace (Oponente)':
                         case 'Winner (Oponente)':
-                            if (vencedor) stats[vencedor].winners++;
+                            if (vencedor) {
+                                if (resultado.includes('Ace')) stats[vencedor].aces++;
+                                else stats[vencedor].winners++;
+                            }
                             break;
-                        case 'Double Fault':
-                            if (sacador) stats[sacador].doubleFaults++;
-                            break;
+
                         case 'Unforced Error':
+                        case 'Unforced Error (Oponente)':
                             if (perdedor) stats[perdedor].unforcedErrors++;
                             break;
+
                         case 'Forced Error':
                         case 'Forced Error (Oponente)':
                             if (perdedor) stats[perdedor].forcedErrors++;
+                            break;
+
+                        case 'Double Fault':
+                        case 'Double Fault (Oponente)':
+                            if (perdedor) stats[perdedor].doubleFaults++;
                             break;
                     }
 
                     const tipoSaqueArr = getPropertyCaseInsensitive(modal, 'tipoSaque');
                     if (tipoSaqueArr && sacador) {
-                        if (tipoSaqueArr.includes("First Serve")) {
+                        const tipoSaque = tipoSaqueArr[0];
+
+                        if (resultado === 'Double Fault' || resultado === 'Double Fault (Oponente)') {
                             stats[sacador].firstServeAttempted++;
-                            if (resultado !== "Double Fault") {
-                                stats[sacador].firstServeMade++;
-                            }
-                        } else if (tipoSaqueArr.includes("Second Serve")) {
+                            stats[sacador].secondServeAttempted++;
+                        }
+                        else if (tipoSaque === "First Serve") {
+                            stats[sacador].firstServeAttempted++;
+                            stats[sacador].firstServeMade++;
+                        }
+
+                        else if (tipoSaque === "Second Serve") {
+                            stats[sacador].firstServeAttempted++;
                             stats[sacador].secondServeAttempted++;
                             if (vencedor === sacador) {
                                 stats[sacador].secondServeWon++;
@@ -326,14 +334,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+
         players.forEach(p => {
             const s = stats[p];
             s.firstServePct = (s.firstServeAttempted > 0) ? Math.round((s.firstServeMade / s.firstServeAttempted) * 100) : 0;
             s.secondServeWonPct = (s.secondServeAttempted > 0) ? Math.round((s.secondServeWon / s.secondServeAttempted) * 100) : 0;
         });
+
         return stats;
     }
-
     function renderStats(id, partidaData) {
         const stats = processStatsData(partidaData);
         if (!stats) { d3.select(id).html('<div>Nenhuma estatística disponível</div>'); return; }
@@ -343,12 +352,12 @@ document.addEventListener('DOMContentLoaded', () => {
         headRow.append('th').text(players[0]); headRow.append('th').text('Estatística'); headRow.append('th').text(players[1]);
         const tbody = table.append('tbody');
         const rows = [
-            { label: 'Aces', key: 'aces' }, 
+            { label: 'Aces', key: 'aces' },
             { label: 'Winners', key: 'winners' },
-            { label: 'Erros não forçados', key: 'unforcedErrors' }, 
+            { label: 'Erros não forçados', key: 'unforcedErrors' },
             { label: 'Erros forçados', key: 'forcedErrors' },
             { label: 'Duplas faltas', key: 'doubleFaults' },
-            { label: '% 1º Saque', key: 'firstServePct' }, 
+            { label: '% 1º Saque', key: 'firstServePct' },
             { label: '% Pontos Ganhos com 2º Saque', key: 'secondServeWonPct' },
             { label: 'Total de Pontos Ganhos', key: 'totalPointsWon' }
         ];

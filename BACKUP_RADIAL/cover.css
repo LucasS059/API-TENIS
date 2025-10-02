@@ -250,3 +250,97 @@ hr {
     color: #000; 
     font-weight: 600;
 }
+
+/* ======================================================================== */
+/* ESTILOS PARA O MENU RADIAL                                              */
+/* ======================================================================== */
+
+.radial-menu-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    min-height: 120px; /* Garante espaço para o botão */
+}
+
+.radial-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    pointer-events: none; /* Não interfere com cliques quando escondido */
+}
+
+.radial-menu.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Permite cliques quando aberto */
+}
+
+.radial-menu-item {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px; /* Tamanho do item */
+    height: 70px;
+    margin: -35px; /* Metade da largura/altura para centralizar */
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.radial-menu-item a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #3e3e3e;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.7rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.radial-menu-item a:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #000;
+    font-weight: 600;
+}
+
+#radial-menu-toggle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: #000;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.behavioral-sections-container {
+    display: none; /* Começa escondido */
+}
