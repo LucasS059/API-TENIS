@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarComportamentoSet: (partidaId, setId, data) => api.request(`/api/partida/${partidaId}/set/${setId}/comportamento`, 'POST', data),
         registrarArbitragem: (id, data) => api.request(`/api/partida/${id}/arbitragem`, 'POST', data),
         registrarComportamentoVirada: (partidaId, setId, gameId, data) => api.request(`/api/partida/${partidaId}/set/${setId}/game/${gameId}/changeover`, 'POST', data),
+        desfazerPonto: (id) => api.request(`/api/partida/${id}/undo`, 'POST')
     };
 
     const ui = {
@@ -53,7 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
             pontoModalTitle: document.getElementById('pontoModalTitle'),
             resultadoPontoTitle: document.getElementById('resultadoPontoTitle'),
             configForm: document.getElementById('configForm'),
-            btnReiniciar: document.getElementById('btnReiniciar'),
+            btnAcaoPartida: document.getElementById('btnAcaoPartida'),
+            btnEncerrarPartida: document.getElementById('btnEncerrarPartida'),
+            btnDesfazerPonto: document.getElementById('btnDesfazerPonto'),
+            labelPontoJogadorA: document.getElementById('labelPontoJogadorA'),
+            labelPontoJogadorB: document.getElementById('labelPontoJogadorB'),
             btnPontoJogadorA: document.getElementById('btnPontoJogadorA'),
             btnPontoJogadorB: document.getElementById('btnPontoJogadorB'),
             btnSalvarModal: document.getElementById('btnSalvarModal'),
@@ -185,6 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const jogadorAvaliadoNome = (jogadorAvaliado === 'player1') ? playerAName : playerBName;
             this.elements.jogadorAvaliadoDisplay.innerHTML = `Analisando: <strong>${jogadorAvaliadoNome}</strong>`;
 
+            this.elements.labelPontoJogadorA.textContent = playerAName;
+            this.elements.labelPontoJogadorB.textContent = playerBName;
+
             partida.sets.forEach((set, i) => {
                 const setCellA = document.querySelector(`#placarJogadorA [data-set="${i + 1}"]`);
                 const setCellB = document.querySelector(`#placarJogadorB [data-set="${i + 1}"]`);
@@ -195,14 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const btnArbitragem = document.getElementById('btnAbrirModalArbitragem');
-            
-            const setFinalizadoPendente = partida.sets.find(s => s.vencedor && !s.modalRespostasSet);
 
-            if (setFinalizadoPendente) {
-                appState.setIDParaComportamento = setFinalizadoPendente._id;
-                this.abrirModal(this.elements.setModal);
-            } 
-            else if (partida.vencedor) {
+            if (partida.vencedor) {
                 this.elements.nomeVencedor.textContent = partida.vencedor;
                 this.abrirModal(this.elements.vencedorModal);
                 btnArbitragem.disabled = true;
@@ -210,44 +212,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (partida.vencedor) {
-                btnArbitragem.disabled = true;
-                this.alternarBotoesDePonto(false);
-            } else {
-                btnArbitragem.disabled = false;
-                this.alternarBotoesDePonto(true);
+            const setFinalizadoPendente = partida.sets.find(s => s.vencedor && !s.modalRespostasSet);
+            if (setFinalizadoPendente) {
+                appState.setIDParaComportamento = setFinalizadoPendente._id;
+                this.abrirModal(this.elements.setModal);
             }
+            
+            const partidaEmAndamento = !partida.vencedor;
+            btnArbitragem.disabled = !partidaEmAndamento;
+            this.alternarBotoesDePonto(partidaEmAndamento);
 
             const setAtual = partida.sets[partida.sets.length - 1];
-            if (!setAtual || setAtual.games.length === 0) {
-                this.alternarBotoesDePonto(false);
+            if (!setAtual || !setAtual.games || setAtual.games.length === 0) {
+                this.elements.btnPontoJogadorA.textContent = '0';
+                this.elements.btnPontoJogadorB.textContent = '0';
+                this.alternarBotoesDePonto(partida.vencedor ? false : true);
                 return;
             };
 
             const gameAtual = setAtual.games[setAtual.games.length - 1];
             const { player1: placarA, player2: placarB } = gameAtual.placarGame;
 
-            // ### LÓGICA DO TIE-BREAK REFORÇADA E COM DIAGNÓSTICO ###
             if (gameAtual.isTiebreak || gameAtual.isSuperTiebreak) {
-                
-                // Linhas de diagnóstico (visíveis no console do navegador com F12)
-                console.log("Modo Tie-break/Super Tie-break ativado.");
-                console.log("Dados do game atual:", JSON.parse(JSON.stringify(gameAtual)));
-                console.log(`Placar recebido: ${playerAName} ${placarA} x ${placarB} ${playerBName}`);
-
                 this.elements.tiebreakContainer.style.display = 'block';
                 this.elements.placarDisplay.style.display = 'none';
                 this.elements.tiebreakTitle.textContent = gameAtual.isSuperTiebreak ? 'Super Tie-break!' : 'Tie-break!';
                 this.elements.tiebreakRulesText.textContent = gameAtual.isSuperTiebreak ? 'Vence quem fizer 10 pontos (com 2 de vantagem).' : 'Vence quem fizer 7 pontos (com 2 de vantagem). O saque troca a cada 2 pontos após o primeiro.';
-                
-                // Atualiza o placar visual dentro da caixa de tie-break
+
                 this.elements.tbScoreA.textContent = String(placarA);
                 this.elements.tbScoreB.textContent = String(placarB);
                 
-                // Atualiza o texto dos botões de ponto
                 this.elements.btnPontoJogadorA.textContent = String(placarA);
                 this.elements.btnPontoJogadorB.textContent = String(placarB);
-                
+
                 this.elements.tbJogadorANome.innerHTML = `${playerAName} <span id="tb-saque-a"></span>`;
                 this.elements.tbJogadorBNome.innerHTML = `${playerBName} <span id="tb-saque-b"></span>`;
                 document.getElementById('tb-saque-a').textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
@@ -257,31 +254,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.placarDisplay.style.display = 'grid';
                 document.getElementById('saqueJogadorA').textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
                 document.getElementById('saqueJogadorB').textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
+                
+                let scoreA_text, scoreB_text;
+
                 if (placarA >= 3 && placarB >= 3) {
                     if (placarA === placarB) {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = '40';
-                        this.elements.btnPontoJogadorA.textContent = '40';
-                        this.elements.btnPontoJogadorB.textContent = '40';
+                        scoreA_text = '40';
+                        scoreB_text = '40';
                     } else if (placarA > placarB) {
-                        this.elements.gameJogadorA.textContent = 'A';
-                        this.elements.gameJogadorB.textContent = '40';
-                        this.elements.btnPontoJogadorA.textContent = 'A';
-                        this.elements.btnPontoJogadorB.textContent = '40';
+                        scoreA_text = 'A';
+                        scoreB_text = '40';
                     } else {
-                        this.elements.gameJogadorA.textContent = '40';
-                        this.elements.gameJogadorB.textContent = 'A';
-                        this.elements.btnPontoJogadorA.textContent = '40';
-                        this.elements.btnPontoJogadorB.textContent = 'A';
+                        scoreA_text = '40';
+                        scoreB_text = 'A';
                     }
                 } else {
-                    this.elements.gameJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
-                    this.elements.gameJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
-                    this.elements.btnPontoJogadorA.textContent = PONTUACAO_TENIS[placarA] || '0';
-                    this.elements.btnPontoJogadorB.textContent = PONTUACAO_TENIS[placarB] || '0';
+                    scoreA_text = PONTUACAO_TENIS[placarA] || '0';
+                    scoreB_text = PONTUACAO_TENIS[placarB] || '0';
                 }
+
+                this.elements.gameJogadorA.textContent = scoreA_text;
+                this.elements.gameJogadorB.textContent = scoreB_text;
+
+                this.elements.btnPontoJogadorA.textContent = scoreA_text;
+                this.elements.btnPontoJogadorB.textContent = scoreB_text;
             }
-        }
+        },
     };
 
     const app = {
@@ -291,7 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerBName: document.getElementById('player2').value || 'Jogador B',
                 numSets: parseInt(document.getElementById('numSets').value),
                 jogadorAvaliado: document.getElementById('jogadorAvaliado').value,
-                formatoSetDecisivo: document.getElementById('formatoSetDecisivo').value
+                formatoSetDecisivo: document.getElementById('formatoSetDecisivo').value,
+                primeiroSacador: document.getElementById('primeiroSacador').value
             };
             document.activeElement.blur();
             const response = await api.iniciarPartida(config);
@@ -303,10 +302,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.lastLossAnswers = {};
                 ui.atualizarPlacar(appState.partida);
                 document.getElementById('saque-selector').style.display = 'flex';
+                
+                document.body.classList.add('in-match');
+                ui.elements.btnEncerrarPartida.onclick = () => {
+                    if (confirm('Tem certeza que deseja encerrar a partida atual? O progresso será perdido.')) {
+                        app.encerrarPartida();
+                    }
+                };
+                ui.elements.btnDesfazerPonto.disabled = true;
             }
         },
+        encerrarPartida() {
+            appState.partida = null;
+            appState.jogadorAtual = null;
+            
+            ui.resetPlacarUI();
+            ui.alternarBotoesDePonto(false);
+            document.getElementById('saque-selector').style.display = 'none';
+            ui.elements.jogadorAvaliadoDisplay.innerHTML = '';
+
+            document.body.classList.remove('in-match');
+            ui.elements.btnEncerrarPartida.onclick = null; 
+            ui.elements.btnDesfazerPonto.disabled = true;
+            
+            ui.abrirModal(ui.elements.configModal);
+        },
         async registrarPonto() {
-            if (!appState.partida || appState.partida.vencedor) return;
+            if (!appState.partida || (appState.partida.vencedor && !appState.partida.sets.find(s => s.vencedor && !s.modalRespostasSet))) return;
             const pontoData = { vencedor: appState.jogadorAtual, modalRespostas: {} };
             document.querySelectorAll('#meuModal .modal-section').forEach(secao => {
                 const secaoNome = secao.dataset.secao;
@@ -328,12 +350,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.partida = response.partida;
                 ui.atualizarPlacar(appState.partida);
                 ui.resetarSelecaoSaque();
-                if (response.partida.triggerChangeoverModal) {
+                ui.elements.btnDesfazerPonto.disabled = false;
+                
+                if (response.partida.triggerChangeoverModal && !response.partida.vencedor) {
                     appState.triggeringGameId = response.partida.triggeringGameId;
                     appState.triggeringSetId = response.partida.triggeringSetId;
                     ui.resetarModal('#viradaModal');
                     ui.abrirModal(ui.elements.viradaModal);
                 }
+            }
+        },
+        async desfazerPonto() {
+            if (!appState.partida || ui.elements.btnDesfazerPonto.disabled) return;
+
+            const response = await api.desfazerPonto(appState.partida._id);
+
+            if (response && response.partida) {
+                appState.partida = response.partida;
+                ui.atualizarPlacar(appState.partida);
+                ui.mostrarConfirmacao('Último ponto desfeito!');
+                ui.elements.btnDesfazerPonto.disabled = true;
+            } else {
+                ui.mostrarConfirmacao('Erro: Não foi possível desfazer o ponto.');
             }
         },
         async registrarComportamentoVirada() {
@@ -364,10 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const response = await api.registrarComportamentoSet(appState.partida._id, appState.setIDParaComportamento, { modalRespostasSet });
             if (response && response.partida) {
-                const setIndex = appState.partida.sets.findIndex(s => s._id === appState.setIDParaComportamento);
-                if (setIndex !== -1) {
-                    appState.partida.sets[setIndex].modalRespostasSet = modalRespostasSet;
-                }
                 appState.partida = response.partida;
             }
         },
@@ -404,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.elements.configForm.addEventListener('submit', (e) => { e.preventDefault(); this.iniciarPartida(); });
             ui.elements.btnNovaPartida.addEventListener('click', () => {
                 ui.fecharModal(ui.elements.vencedorModal);
-                ui.abrirModal(ui.elements.configModal);
+                app.encerrarPartida();
             });
 
             ['btnPontoJogadorA', 'btnPontoJogadorB'].forEach(id => {
@@ -433,10 +467,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             ui.elements.btnSalvarModal.addEventListener('click', () => { ui.fecharModal(ui.elements.pontoModal); this.registrarPonto(); });
-            
+            ui.elements.btnDesfazerPonto.addEventListener('click', () => this.desfazerPonto());
+
             ui.elements.btnSalvarSet.addEventListener('click', async () => {
                 ui.fecharModal(ui.elements.setModal);
-                await this.registrarComportamentoSet();
+                await this.registrarComportamentoSet(); 
 
                 if (appState.partida && appState.partida.vencedor) {
                     const algumSetPendente = appState.partida.sets.some(s => s.vencedor && !s.modalRespostasSet);
@@ -452,26 +487,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.querySelectorAll('.modal-section .btn, .option-resultado').forEach(el => {
                 el.addEventListener('click', (e) => {
-                    if (e.currentTarget.closest('.modal-footer') || e.currentTarget.classList.contains('btn-close')) {
+                    const elementoClicado = e.currentTarget;
+                    if (elementoClicado.closest('.modal-footer') || elementoClicado.classList.contains('btn-close')) {
                         return;
                     }
-                    const secaoDiv = e.currentTarget.closest('.modal-section');
+
+                    const secaoDiv = elementoClicado.closest('.modal-section');
                     if (!secaoDiv) return;
 
-                    const elementoAtivavel = e.currentTarget.classList.contains('option-resultado') ? e.currentTarget : e.currentTarget;
-                    if (!elementoAtivavel) return;
+                    const grupoPai = elementoClicado.closest('[data-group]');
+                    const isMultiSelect = secaoDiv.dataset.multiselect === 'true' && !grupoPai;
+                    const estavaAtivo = elementoClicado.classList.contains('active');
 
-                    const isMultiSelect = secaoDiv.dataset.multiselect === 'true';
-                    const estavaAtivo = elementoAtivavel.classList.contains('active');
-
-                    if (isMultiSelect) {
-                        elementoAtivavel.classList.toggle('active');
+                    if (grupoPai) {
+                        grupoPai.querySelectorAll('.active').forEach(activeEl => {
+                            if (activeEl !== elementoClicado) {
+                                activeEl.classList.remove('active');
+                            }
+                        });
+                        elementoClicado.classList.toggle('active');
+                    } else if (isMultiSelect) {
+                        elementoClicado.classList.toggle('active');
                     } else {
-                        if (estavaAtivo) {
-                            elementoAtivavel.classList.remove('active');
-                        } else {
-                            secaoDiv.querySelectorAll('.active').forEach(activeEl => activeEl.classList.remove('active'));
-                            elementoAtivavel.classList.add('active');
+                        secaoDiv.querySelectorAll('.active').forEach(activeEl => activeEl.classList.remove('active'));
+                        if (!estavaAtivo) {
+                            elementoClicado.classList.add('active');
                         }
                     }
                 });

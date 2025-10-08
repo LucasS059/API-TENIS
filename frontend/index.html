@@ -12,19 +12,25 @@
     <link rel="stylesheet" href="/cover.css">
 </head>
 
-<body class="d-flex text-center">
-    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-        <main class="px-3 my-4">
+<body>
 
+    <header class="app-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h3 class="app-title mb-0">Análise de Tênis</h3>
+            <div id="jogadorAvaliadoDisplay" class="jogador-avaliado-info mb-0"></div>
+        </div>
+    </header>
+
+    <main class="d-flex text-center">
+        <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
             <div id="confirmacao-sucesso" class="alert alert-success text-center"
-                style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:9999; width:350px;">
+                style="display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:9999; width:350px;">
                 <span id="mensagem-confirmacao"></span>
             </div>
 
             <div class="placar">
                 <div class="placar-container my-4">
                     <h1 class="placar-title">Placar da Partida</h1>
-                    <div id="jogadorAvaliadoDisplay" class="jogador-avaliado-info"></div>
 
                     <div id="tiebreak-container" style="display:none;" class="text-center py-2 mb-3">
                         <h4 id="tiebreak-title"></h4>
@@ -75,456 +81,488 @@
                     </div>
                 </div>
 
-                <div class="row mt-3 g-2 justify-content-center" id="saque-selector">
-                    <div class="col-6"><button class="btn btn-saque w-100 active" data-saque="First Serve">1º
-                            Saque</button></div>
-                    <div class="col-6"><button class="btn btn-saque w-100" data-saque="Second Serve">2º Saque</button>
+                <div class="painel-acoes mt-4" id="painelAcoes">
+                    <div class="row g-2 justify-content-center" id="saque-selector">
+                        <div class="col-6"><button class="btn btn-saque w-100 active" data-saque="First Serve">1º
+                                Saque</button></div>
+                        <div class="col-6"><button class="btn btn-saque w-100" data-saque="Second Serve">2º
+                                Saque</button></div>
                     </div>
-                </div>
-
-                <div class="row mt-4 g-3 action-buttons">
-                    <div class="col-6"><button class="btn w-100" id="btnPontoJogadorA" disabled></button></div>
-                    <div class="col-6"><button class="btn w-100" id="btnPontoJogadorB" disabled></button></div>
-                    <div class="col-12"><button class="btn w-100" id="btnAbrirModalArbitragem" data-bs-toggle="modal"
-                            data-bs-target="#arbitragemModal">Arbitragem</button></div>
+                    <div class="row mt-3 g-3">
+                        <div class="col-6 d-flex flex-column">
+                            <div class="player-action-label" id="labelPontoJogadorA"></div>
+                            <button class="btn w-100 h-100" id="btnPontoJogadorA" disabled></button>
+                        </div>
+                        <div class="col-6 d-flex flex-column">
+                            <div class="player-action-label" id="labelPontoJogadorB"></div>
+                            <button class="btn w-100 h-100" id="btnPontoJogadorB" disabled></button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn w-100" id="btnAbrirModalArbitragem" data-bs-toggle="modal"
+                                data-bs-target="#arbitragemModal">Arbitragem</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="secondary-actions mt-4">
-                    <button class="btn me-2" id="btnReiniciar" data-bs-toggle="modal"
+                    <button class="btn me-2" id="btnAcaoPartida" data-bs-toggle="modal"
                         data-bs-target="#configModal">Configurar Partida</button>
-                    <a href="/graficos.html" class="btn">Visualizar Gráficos</a>
-                </div>
-            </div>
-        </main>
+                    <a href="/graficos.html" class="btn" id="btnVerGraficos">Visualizar Gráficos</a>
 
-        <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content text-bg-dark">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Configuração da Partida</h5><button type="button" class="btn-close"
-                            data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="configForm">
-                            <div class="mb-3"><label for="player1" class="form-label">Nome do Jogador 1</label><input
-                                    type="text" class="form-control" id="player1" value="Jogador A" required></div>
-                            <div class="mb-3"><label for="player2" class="form-label">Nome do Jogador 2</label><input
-                                    type="text" class="form-control" id="player2" value="Jogador B" required></div>
-                            <div class="mb-3"><label class="form-label">Jogador a ser avaliado</label><select
-                                    class="form-select" id="jogadorAvaliado">
-                                    <option value="player1">Jogador 1</option>
-                                    <option value="player2">Jogador 2</option>
-                                </select></div>
-                            <div class="mb-3"><label class="form-label">Quantidade de Sets</label><select
-                                    class="form-select" id="numSets">
-                                    <option value="3">Melhor de 3</option>
-                                    <option value="5">Melhor de 5</option>
-                                </select></div>
-                            <div class="mb-3">
-                                <label for="formatoSetDecisivo" class="form-label">Formato do Set Decisivo</label>
-                                <select class="form-select" id="formatoSetDecisivo">
-                                    <option value="tiebreak" selected>Set Normal com Tiebreak (em 6-6)</option>
-                                    <option value="vantagem">Set de Vantagem (sem tiebreak)</option>
-                                    <option value="supertiebreak">Super Tiebreak (substitui o set)</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Iniciar Partida</button>
-                        </form>
-                    </div>
+                    <button class="btn me-2" id="btnEncerrarPartida">Cancelar Partida</button>
+                    <button class="btn me-2" id="btnDesfazerPonto">Desfazer Ponto</button>
                 </div>
             </div>
         </div>
+    </main>
 
-        <div class="modal fade" id="meuModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable modal-lg">
-                <div class="modal-content text-bg-dark">
-                    <div class="modal-header">
-                        <h5 class="modal-title w-100 text-center" id="pontoModalTitle">Avaliação do Ponto</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center">
+    <footer class="app-footer">
+        <div class="container">
+            <p>&copy; 2025 Análise de Tênis. Todos os direitos reservados.</p>
+        </div>
+    </footer>
 
-                        <div class="mb-4 modal-section" data-secao="resultadoPonto">
-                            <h4 class="section-title" id="resultadoPontoTitle">How was the point won or lost</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-4 d-none option-resultado" data-valor="Winner"><button
-                                        class="btn btn-personalizado w-100">Winner</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Ace"><button
-                                        class="btn btn-personalizado w-100">Ace</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Forced Error (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Forced Error (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Unforced Error (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Double Fault (Oponente)">
-                                    <button class="btn btn-personalizado w-100">Double Fault (do Oponente)</button>
-                                </div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error"><button
-                                        class="btn btn-personalizado w-100">Unforced Error</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Forced Error"><button
-                                        class="btn btn-personalizado w-100">Forced Error</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Double Fault"><button
-                                        class="btn btn-personalizado w-100">Double Fault</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Winner (Oponente)"><button
-                                        class="btn btn-personalizado w-100">Winner (do Oponente)</button></div>
-                                <div class="col-md-4 d-none option-resultado" data-valor="Ace (Oponente)"><button
-                                        class="btn btn-personalizado w-100">Ace (do Oponente)</button></div>
-                            </div>
+    <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content text-bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configuração da Partida</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="configForm">
+                        <div class="mb-3"><label for="player1" class="form-label">Nome do Jogador 1</label><input
+                                type="text" class="form-control" id="player1" value="Jogador A" required></div>
+                        <div class="mb-3"><label for="player2" class="form-label">Nome do Jogador 2</label><input
+                                type="text" class="form-control" id="player2" value="Jogador B" required></div>
+                        <div class="mb-3"><label class="form-label">Jogador a ser avaliado</label><select
+                                class="form-select" id="jogadorAvaliado">
+                                <option value="player1">Jogador 1</option>
+                                <option value="player2">Jogador 2</option>
+                            </select></div>
+                        <div class="mb-3"><label class="form-label">Quantidade de Sets</label><select
+                                class="form-select" id="numSets">
+                                <option value="3">Melhor de 3</option>
+                                <option value="5">Melhor de 5</option>
+                            </select></div>
+                        <div class="mb-3">
+                            <label for="formatoSetDecisivo" class="form-label">Formato do Set Decisivo</label>
+                            <select class="form-select" id="formatoSetDecisivo">
+                                <option value="tiebreak" selected>Set Normal com Tiebreak (em 6-6)</option>
+                                <option value="vantagem">Set de Vantagem (sem tiebreak)</option>
+                                <option value="supertiebreak">Super Tiebreak (substitui o set)</option>
+                            </select>
                         </div>
-                        <hr>
-
-                        <div class="mb-4 modal-section" data-secao="golpe">
-                            <h4 class="section-title">Forehand / Backhand</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Forehand">Forehand</button></div>
-                                <div class="col-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Backhand">Backhand</button></div>
-                            </div>
+                        <div class="mb-3">
+                            <label for="primeiroSacador" class="form-label">Quem começa sacando?</label>
+                            <select class="form-select" id="primeiroSacador">
+                                <option value="player1" selected>Jogador 1</option>
+                                <option value="player2">Jogador 2</option>
+                            </select>
                         </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="tipoShot">
-                            <h4 class="section-title">Type of Shot</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Regular">Regular</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Passing">Passing</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Approach">Approach</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Slice">Slice</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Volley">Volley</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Drop Shot">Drop Shot</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Lob">Lob</button></div>
-                                <div class="col-md-3"><button class="btn btn-personalizado w-100"
-                                        data-valor="Overhead">Overhead</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="shotLocation">
-                            <h4 class="section-title">Shot Location</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Cross Court">Cross court</button></div>
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Middle">Middle</button></div>
-                                <div class="col-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Down the Line">Down the Line</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="rallyLength">
-                            <h4 class="section-title">Rally length</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="0">0</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="1">1</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="2">2</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="3">3</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="4">4</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="5">5</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="6">6</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="7">7</button>
-                                </div>
-                                <div class="col-auto"><button class="btn btn-personalizado" data-valor="8+">8+</button>
-                                </div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="ritual" data-multiselect="true">
-                            <h4 class="section-title">1. Ritual e Rotina</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ir à toalha entre pontos">Ir à toalha entre pontos</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Demorar excessivamente entre pontos">Demorar excessivamente entre
-                                        pontos (fuga/quebra de ritmos)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Trocar a raquete para a mão não dominante">Trocar a raquete para a
-                                        mão não dominante (descanso, relaxamento do braço)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Mantém a raquete na mão dominante">Mantém a raquete na mão dominante
-                                        (braço em uso contínuo, maior probabilidade de tensão ou fadiga)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ritual pré-ponto">Ritual pré-ponto (quicar bola, ajeitar cordas,
-                                        mexer na camiseta, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Gestos de desequilíbrio ou fraqueza">Gestos de desequilíbrio ou
-                                        fraqueza (gesticular excessivamente, arrastar os pés, corpo mole)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Respiração profunda pelo nariz">Respiração profunda pelo
-                                        nariz</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Respiração ofegante pela boca">Respiração ofegante pela
-                                        boca</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="linguagemCorporal" data-multiselect="true">
-                            <h4 class="section-title">2. Linguagem Corporal</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Postura ereta">Postura ereta, olhar firme, pernas e pés
-                                        ativados</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Postura caída">Postura corporal caída (cabeça baixa, ombros
-                                        curvados)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Relaxamento facial">Pequenos sorrisos, relaxamento facial e da
-                                        testa</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Tensão facial">Desviar o olhar da quadra / boca, face e testa
-                                        franzidos</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ativação corporal">Ativação corporal adequada (saltos, quicar no
-                                        lugar, energia nos pés e braços)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Postura passiva">Postura passiva/sem energia (pés plantados, ombros
-                                        baixos, desanimado)</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="expressaoEmocional" data-multiselect="true">
-                            <h4 class="section-title">3. Expressão Emocional</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Vibração positiva">Vibração positiva (comemorar, punho cerrado,
-                                        grito de incentivo, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Jogar raquete/xingar">Jogar a raquete no chão / chutar objetos /
-                                        xingar</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Expressão equilibrada">Expressões equilibradas após os
-                                        erros</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Movimentos bruscos/depressivos">Movimentos bruscos ou depressivos
-                                        após os erros (socar perna, abaixar a cabeça, chorar, bater o pé, etc)</button>
-                                </div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Fair Play">Aplauso / reconhecimento ao adversário (Fair
-                                        Play)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Discussão hostil">Discussão hostil com o adversário</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="monologo" data-multiselect="true">
-                            <h4 class="section-title">4. Monólogo</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Positivo">Monólogo positivo (“vamos!”, “boa!”, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Jogar raquete/xingar">Jogar a raquete no chão / chutar objetos /
-                                        xingar</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Negativo">Monólogo negativo (xingamentos, críticas, auto cobrança,
-                                        etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Auto-correção negativa">Auto correções negativas
-                                        (verbalizar)</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="autoAnalise" data-multiselect="true">
-                            <h4 class="section-title">5. Auto Análise Técnica</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Correção técnica (sombra)">Correção técnica por meio da repetição de
-                                        um golpe "sem bola”</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ausência de correção">Ausência de correção técnica após o erro (sem
-                                        repetição do golpe)</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="explosaoEmocional" data-multiselect="true">
-                            <h4 class="section-title">6. Ápice de Explosão Emocional</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Extravasar (permitido)">Extravasar com gritos e gestos, por meio de
-                                        expressões verbais e corporais permitidas na regra</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Comportamento autolesivo">Comportamento autolesivo (se bater,
-                                        morder, puxar cabelo, bater raquete no próprio corpo com violência,
-                                        etc)</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="reacaoErro" data-multiselect="true">
-                            <h4 class="section-title">7. Reação ao Erro</h4>
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Indiferença construtiva">Indiferença construtiva frente ao erro
-                                        (despreocupação, segue o jogo, faz rituais, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Apatia">Apatia após o erro (lentidão, corpo parado, desatenção,
-                                        ausência de rituais, etc)</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Expressão (dentro das regras)">Expressão após a frustração nos
-                                        conformes do que é permitido na regra</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Expressão (fora das regras)">Expressão após a frustração contra os
-                                        conformes do permitido na regra (xingar, bater, desrespeitar, etc)</button>
-                                </div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Sorrir com leveza">Sorrir com leveza e aceitação após o
-                                        erro</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Sorrir com ironia">Sorrir com ironia e desprezo após o erro</button>
-                                </div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Foco visual na quadra">Manter o foco visual em estímulos dentro de
-                                        quadra</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Foco visual fora da quadra">Olhar para estímulos fora da
-                                        quadra</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="ritmo">
-                            <h4 class="section-title">8. Ritmo Entre Pontos</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Desatento">Desatento, perde tempo, dispersa foco, desorganizado, sem
-                                        padrão</button></div>
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Equilibrado">Equilibrado, ritmo controlado, tempo adequado para
-                                        respirar, organizado, padronizado</button></div>
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Acelerado">Acelerado, rápido demais para sacar/devolver, ausência de
-                                        respiração, apressado, atropelado</button></div>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-4 modal-section" data-secao="gemidos">
-                            <h4 class="section-title">9. Presença de Gemidos</h4>
-                            <div class="row g-2 justify-content-center">
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ausência">Ausência de gemidos ou gemidos aleatórios</button></div>
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Consistentes">Gemidos consistentes (ritmo, intensidade e
-                                        coordenação)</button></div>
-                                <div class="col-md-4"><button class="btn btn-personalizado w-100"
-                                        data-valor="Excessivos">Gemidos excessivamente altos e desproporcionais a
-                                        potência do golpe</button></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-primary" id="btnSalvarModal">Salvar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    </div>
+                        <button type="submit" class="btn btn-primary w-100">Iniciar Partida</button>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="modal fade" id="viradaModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content text-bg-dark">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Comportamento na Virada de Lado</h5><button type="button"
-                            class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal fade" id="meuModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content text-bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title w-100 text-center" id="pontoModalTitle">Avaliação do Ponto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+
+                    <div class="mb-4 modal-section" data-secao="resultadoPonto">
+                        <h4 class="section-title" id="resultadoPontoTitle">How was the point won or lost</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-md-4 d-none option-resultado" data-valor="Winner"><button
+                                    class="btn btn-personalizado w-100">Winner</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Ace"><button
+                                    class="btn btn-personalizado w-100">Ace</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Forced Error (Oponente)">
+                                <button class="btn btn-personalizado w-100">Forced Error (do Oponente)</button>
+                            </div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error (Oponente)">
+                                <button class="btn btn-personalizado w-100">Unforced Error (do Oponente)</button>
+                            </div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Double Fault (Oponente)">
+                                <button class="btn btn-personalizado w-100">Double Fault (do Oponente)</button>
+                            </div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Unforced Error"><button
+                                    class="btn btn-personalizado w-100">Unforced Error</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Forced Error"><button
+                                    class="btn btn-personalizado w-100">Forced Error</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Double Fault"><button
+                                    class="btn btn-personalizado w-100">Double Fault</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Winner (Oponente)"><button
+                                    class="btn btn-personalizado w-100">Winner (do Oponente)</button></div>
+                            <div class="col-md-4 d-none option-resultado" data-valor="Ace (Oponente)"><button
+                                    class="btn btn-personalizado w-100">Ace (do Oponente)</button></div>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-4 modal-section" data-secao="viradaGame" data-multiselect="true">
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ritual de concentração">Ritual de concentração</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Hidratação consistente">Hidratação consistente</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Nutrição consistente">Nutrição consistente</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Suplementação consistente">Suplementação consistente</button></div>
+                    <hr>
+
+                    <div class="mb-4 modal-section" data-secao="golpe">
+                        <h4 class="section-title">Forehand / Backhand</h4>
+                        <div class="row g-2 justify-content-center" data-group="golpe-1">
+                            <div class="col-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Forehand">Forehand</button></div>
+                            <div class="col-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Backhand">Backhand</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="tipoShot">
+                        <h4 class="section-title">Type of Shot</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Regular">Regular</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Passing">Passing</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Approach">Approach</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Slice">Slice</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Volley">Volley</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Drop Shot">Drop Shot</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Lob">Lob</button></div>
+                            <div class="col-md-3"><button class="btn btn-personalizado w-100"
+                                    data-valor="Overhead">Overhead</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="shotLocation">
+                        <h4 class="section-title">Shot Location</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Cross Court">Cross court</button></div>
+                            <div class="col-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Middle">Middle</button></div>
+                            <div class="col-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Down the Line">Down the Line</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="rallyLength">
+                        <h4 class="section-title">Rally length</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="0">0</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="1">1</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="2">2</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="3">3</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="4">4</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="5">5</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="6">6</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="7">7</button></div>
+                            <div class="col-auto"><button class="btn btn-personalizado" data-valor="8+">8+</button>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer"><button type="button" class="btn btn-primary"
-                            id="btnSalvarVirada">Salvar</button></div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="ritual">
+                        <h4 class="section-title">1. Ritual e Rotina</h4>
+                        <div class="row g-2 mb-2" data-group="ritual-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ir à toalha entre pontos">Ir à toalha entre pontos</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Demorar excessivamente entre pontos">Demorar excessivamente entre
+                                    pontos (fuga/quebra de ritmos</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="ritual-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Trocar a raquete para a mão não dominante">Trocar a raquete para a
+                                    mão não dominante (descanso, relaxamento do braço)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Mantém a raquete na mão dominante">Mantém a raquete na mão dominante
+                                    (braço em uso contínuo, maior probabilidade de tensão ou fadiga)</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="ritual-3">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ritual pré-ponto">Ritual pré-ponto (quicar bola, ajeitar cordas,
+                                    mexer na camiseta, etc)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Gestos de desequilíbrio ou fraqueza">Gestos de desequilíbrio ou
+                                    fraqueza (gesticular excessivamente, arrastar os pés, corpo mole)</button></div>
+                        </div>
+                        <div class="row g-2" data-group="ritual-4">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Respiração profunda pelo nariz">Respiração profunda pelo nariz</button>
+                            </div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Respiração ofegante pela boca">Respiração ofegante pela boca</button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="linguagemCorporal" data-multiselect="true">
+                        <h4 class="section-title">2. Linguagem Corporal</h4>
+                        <div class="row g-2 mb-2" data-group="linguagem-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Postura ereta">Postura ereta, olhar firme, pernas e pés
+                                    ativados</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Postura caída">Postura corporal caída (cabeça baixa, ombros
+                                    curvados)</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="linguagem-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Relaxamento facial">Pequenos sorrisos, relaxamento facial e da
+                                    testa</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Tensão facial">Desviar o olhar da quadra / boca, face e testa
+                                    franzidos</button></div>
+                        </div>
+                        <div class="row g-2" data-group="linguagem-3">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ativação corporal">Ativação corporal adequada (saltos, quicar no
+                                    lugar, energia nos pés e braços)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Postura passiva">Postura passiva/sem energia (pés plantados, ombros
+                                    baixos, desanimado)</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="expressaoEmocional" data-multiselect="true">
+                        <h4 class="section-title">3. Expressão Emocional</h4>
+                        <div class="row g-2 mb-2" data-group="expressao-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Vibração positiva">Vibração positiva (comemorar, punho cerrado,
+                                    grito de incentivo, etc)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Jogar raquete/xingar">Jogar a raquete no chão / chutar objetos /
+                                    xingar</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="expressao-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Expressão equilibrada">Expressões equilibradas após os erros</button>
+                            </div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Movimentos bruscos/depressivos">Movimentos bruscos ou depressivos
+                                    após os erros (socar perna, abaixar a cabeça, chorar, bater o pé, etc)</button>
+                            </div>
+                        </div>
+                        <div class="row g-2" data-group="expressao-3">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Fair Play">Aplauso / reconhecimento ao adversário</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Discussão hostil">Discussão hostil com o adversário</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="monologo" data-multiselect="true">
+                        <h4 class="section-title">4. Monólogo</h4>
+                        <div class="row g-2 mb-2" data-group="monologo-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Positivo">Monólogo positivo (“vamos!”, “boa!”, etc)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Negativo">Monólogo negativo (xingamentos, críticas, etc)</button></div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Auto-correção negativa">Auto correções negativas (verbalizar)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="autoAnalise" data-multiselect="true">
+                        <h4 class="section-title">5. Auto Análise Técnica</h4>
+                        <div class="row g-2" data-group="autoanalise-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Correção técnica (sombra)">Correção técnica por meio da repetição de
+                                    um golpe "sem bola”</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ausência de correção">Ausência de correção técnica após o erro (sem
+                                    repetição do golpe)</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="explosaoEmocional" data-multiselect="true">
+                        <h4 class="section-title">6. Ápice de Explosão Emocional</h4>
+                        <div class="row g-2" data-group="explosao-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Extravasar (permitido)">Extravasar com gritos e gestos, por meio de
+                                    expressões verbais e corporais permitidas na regra</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Comportamento autolesivo">Comportamento autolesivo (se bater,
+                                    morder, puxar cabelo, bater raquete no próprio corpo com violência,
+                                    etc)</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="reacaoErro" data-multiselect="true">
+                        <h4 class="section-title">7. Reação ao Erro</h4>
+                        <div class="row g-2 mb-2" data-group="reacao-1">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Indiferença construtiva">Indiferença construtiva frente ao erro
+                                    (despreocupação, segue o jogo, faz rituais, etc)</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100" data-valor="Apatia">Apatia
+                                    após o erro (lentidão, corpo parado, desatenção,
+                                    ausência de rituais, etc)</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="reacao-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Expressão (dentro das regras)">Expressão após a frustração nos
+                                    conformes do que é permitido na regra</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Expressão (fora das regras)">Expressão após a frustração contra os
+                                    conformes do permitido na regra (xingar, bater, desrespeitar, etc)</button></div>
+                        </div>
+                        <div class="row g-2 mb-2" data-group="reacao-3">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Sorrir com leveza">Sorrir com leveza e aceitação após o
+                                    erro</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Sorrir com ironia">Sorrir com ironia e desprezo após o erro</button>
+                            </div>
+                        </div>
+                        <div class="row g-2" data-group="reacao-4">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Foco visual na quadra">Manter o foco visual em estímulos dentro de
+                                    quadra</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Foco visual fora da quadra">Olhar para estímulos fora da
+                                    quadra</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="ritmo">
+                        <h4 class="section-title">8. Ritmo Entre Pontos</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Desatento">Desatento, perde tempo, dispersa foco, desorganizado, sem
+                                    padrão</button></div>
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Equilibrado">Equilibrado, ritmo controlado, tempo adequado para
+                                    respirar, organizado, padronizado</button></div>
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Acelerado">Acelerado, rápido demais para sacar/devolver, ausência de
+                                    respiração, apressado, atropelado</button></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-4 modal-section" data-secao="gemidos">
+                        <h4 class="section-title">9. Presença de Gemidos</h4>
+                        <div class="row g-2 justify-content-center">
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ausência">Ausência de gemidos ou gemidos aleatórios</button></div>
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Consistentes">Gemidos consistentes (ritmo, intensidade e
+                                    coordenação)</button></div>
+                            <div class="col-md-4"><button class="btn btn-personalizado w-100"
+                                    data-valor="Excessivos">Gemidos excessivamente altos e desproporcionais a
+                                    potência do golpe</button></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" id="btnSalvarModal">Salvar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="modal fade" id="setModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content text-bg-dark">
-                    <div class="modal-header">
-                        <h5 class="modal-title">11. Comportamento após finalizar o SET</h5><button type="button"
-                            class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-4 modal-section" data-secao="comportamentoSet" data-multiselect="true">
-                            <div class="row g-2">
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ritual de concentração">Ritual de concentração</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Jogar raquete/xingar">Jogar raquete/xingar</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Troca de camiseta">Troca de camiseta</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Não trocar camiseta">Não trocar camiseta</button></div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ir ao banheiro após ganhar">Ir ao banheiro após ganhar</button>
-                                </div>
-                                <div class="col-md-6"><button class="btn btn-personalizado w-100"
-                                        data-valor="Ir ao banheiro após perder">Ir ao banheiro após perder</button>
-                                </div>
-                            </div>
+    <div class="modal fade" id="viradaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Comportamento na Virada de Lado</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4 modal-section" data-secao="viradaGame" data-multiselect="true">
+                        <div class="row g-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ritual de concentração">Ritual de concentração</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Hidratação consistente">Hidratação consistente</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Nutrição consistente">Nutrição consistente</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Suplementação consistente">Suplementação consistente</button></div>
                         </div>
                     </div>
-                    <div class="modal-footer"><button type="button" class="btn btn-primary"
-                            id="btnSalvarSet">Salvar</button></div>
                 </div>
+                <div class="modal-footer"><button type="button" class="btn btn-primary"
+                        id="btnSalvarVirada">Salvar</button></div>
             </div>
         </div>
+    </div>
 
-
-        <div class="modal fade" id="arbitragemModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content text-bg-dark">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Chamada de Árbitro</h5><button type="button" class="btn-close"
-                            data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="quemSolicitouSection">
-                            <div class="modal-section" data-secao="arbitragem_solicitante">
-                                <h4 class="section-title">Qual jogador solicitou a chamada?</h4>
-                                <div id="arbitragem-solicitante-options"
-                                    class="d-flex gap-2 justify-content-center py-2">
-                                </div>
+    <div class="modal fade" id="setModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Comportamento após finalizar o SET</h5><button type="button"
+                        class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4 modal-section" data-secao="comportamentoSet" data-multiselect="true">
+                        <div class="row g-2">
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ritual de concentração">Ritual de concentração</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Jogar raquete/xingar">Jogar raquete/xingar</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Troca de camiseta">Troca de camiseta</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Não trocar camiseta">Não trocar camiseta</button></div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ir ao banheiro após ganhar">Ir ao banheiro após ganhar</button>
                             </div>
-                        </div>
-                        <div id="opcoesArbitragemSection" style="display: none;">
-                            <div class="modal-section" data-secao="arbitragem_resultado">
-                                <h4 class="section-title">Qual foi a decisão do árbitro?</h4>
-                                <small class="d-block text-secondary mb-3">(Resultado para o jogador que está sendo
-                                    analisado)</small>
-                                <div class="d-flex gap-2 justify-content-center py-2">
-                                    <button class="btn btn-sm btn-secondary w-50" data-valor="Decisão favorável">Decisão
-                                        Favorável</button>
-                                    <button class="btn btn-sm btn-secondary w-50"
-                                        data-valor="Decisão desfavorável">Decisão
-                                        Desfavorável</button>
-                                </div>
+                            <div class="col-md-6"><button class="btn btn-personalizado w-100"
+                                    data-valor="Ir ao banheiro após perder">Ir ao banheiro após perder</button>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-primary" id="btnSalvarArbitragem">Salvar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-primary"
+                        id="btnSalvarSet">Salvar</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="arbitragemModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chamada de Árbitro</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="quemSolicitouSection">
+                        <div class="modal-section" data-secao="arbitragem_solicitante">
+                            <h4 class="section-title">Qual jogador solicitou a chamada?</h4>
+                            <div id="arbitragem-solicitante-options" class="d-flex gap-2 justify-content-center py-2">
+                            </div>
+                        </div>
                     </div>
+                    <div id="opcoesArbitragemSection" style="display: none;">
+                        <div class="modal-section" data-secao="arbitragem_resultado">
+                            <h4 class="section-title">Qual foi a decisão do árbitro?</h4>
+                            <small class="d-block text-secondary mb-3">(Resultado para o jogador que está sendo
+                                analisado)</small>
+                            <div class="d-flex gap-2 justify-content-center py-2">
+                                <button class="btn btn-sm btn-secondary w-50" data-valor="Decisão favorável">Decisão
+                                    Favorável</button>
+                                <button class="btn btn-sm btn-secondary w-50" data-valor="Decisão desfavorável">Decisão
+                                    Desfavorável</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" id="btnSalvarArbitragem">Salvar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 </div>
             </div>
         </div>
@@ -546,6 +584,7 @@
             </div>
         </div>
     </div>
+
     <script src="/assets/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>

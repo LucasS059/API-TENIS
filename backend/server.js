@@ -4,19 +4,22 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { processarPonto, formatarPlacarAtual } from './tennisLogic.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const undoBuffer = new Map();
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/tennis', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log('MongoDB conectado'))
-  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
-    
+    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+
 const PontoSchema = new mongoose.Schema({
     pontoId: String,
     vencedor: String,
@@ -37,7 +40,7 @@ const GameSchema = new mongoose.Schema({
     isSuperTiebreak: { type: Boolean, default: false },
     sacador: String,
     pontos: [PontoSchema],
-    changeoverData: { type: Object, default: null } 
+    changeoverData: { type: Object, default: null }
 }, { _id: false });
 
 const SetSchema = new mongoose.Schema({
@@ -83,7 +86,11 @@ app.post('/api/partida', async (req, res) => {
     try {
         const { configuracao } = req.body;
         const partidaId = uuidv4();
-        
+
+        const sacadorInicial = configuracao.primeiroSacador === 'player1'
+            ? configuracao.playerAName
+            : configuracao.playerBName;
+
         const primeiroSet = {
             _id: uuidv4(),
             numero: 1,
@@ -91,7 +98,7 @@ app.post('/api/partida', async (req, res) => {
             games: [{
                 gameId: uuidv4(),
                 placarGame: { player1: 0, player2: 0 },
-                sacador: configuracao.playerAName,
+                sacador: sacadorInicial,
                 isTiebreak: false,
                 isSuperTiebreak: false,
                 pontos: []
@@ -120,102 +127,33 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Partida não encontrada ou finalizada.' });
         }
 
-        const { vencedor, modalRespostas } = req.body;
-        const { playerAName, playerBName, numSets, formatoSetDecisivo } = partida.configuracao;
-        let setAtual = partida.sets[partida.sets.length - 1];
-        let gameAtual = setAtual.games[setAtual.games.length - 1];
-        let isChangeover = false;
+        const estadoAnterior = JSON.parse(JSON.stringify(partida.toObject()));
+        undoBuffer.set(req.params.id, estadoAnterior);
 
-        const jogadorKey = vencedor === playerAName ? 'player1' : 'player2';
-        gameAtual.placarGame[jogadorKey]++;
-        gameAtual.pontos.push({ 
-            pontoId: uuidv4(), 
-            vencedor, 
-            modalRespostas, 
+        const { vencedor, modalRespostas } = req.body;
+        
+        const resultado = processarPonto(partida, vencedor);
+        
+        const { gameAtual } = resultado;
+        gameAtual.pontos.push({
+            pontoId: uuidv4(),
+            vencedor,
+            modalRespostas,
             sacador: gameAtual.sacador,
             placarNoMomento: formatarPlacarAtual(gameAtual.placarGame, gameAtual.isTiebreak || gameAtual.isSuperTiebreak).placarFormatado,
-            timestamp: new Date() 
+            timestamp: new Date()
         });
 
-        const isTiebreakOrSuper = gameAtual.isTiebreak || gameAtual.isSuperTiebreak;
-        const vencedorDoGameKey = isTiebreakOrSuper ? checarFimDeTiebreak(gameAtual) : checarFimDeGame(gameAtual);
-        
-        if (!vencedorDoGameKey) {
-            if (isTiebreakOrSuper) {
-                gameAtual.sacador = getSacadorTiebreak(gameAtual, partida);
-                const totalPontosTiebreak = gameAtual.placarGame.player1 + gameAtual.placarGame.player2;
-                if (totalPontosTiebreak > 0 && totalPontosTiebreak % 6 === 0) {
-                    isChangeover = true;
-                }
-            }
-            partida.updatedAt = new Date();
-            await partida.save();
-            const partidaObj = partida.toObject();
-            if (isChangeover) {
-                partidaObj.triggerChangeoverModal = true;
-                partidaObj.triggeringGameId = gameAtual.gameId;
-                partidaObj.triggeringSetId = setAtual._id;
-            }
-            return res.status(200).json({ success: true, partida: partidaObj });
-        }
-
-        gameAtual.vencedor = (vencedorDoGameKey === 'player1') ? playerAName : playerBName;
-        
-        const totalGamesNoSet = setAtual.placarGames.player1 + setAtual.placarGames.player2;
-        if (!isTiebreakOrSuper && totalGamesNoSet > 0 && ((totalGamesNoSet + 1) % 2 === 1)) {
-             isChangeover = true;
-        }
-
-        if (gameAtual.isSuperTiebreak) {
-            setAtual.placarGames[vencedorDoGameKey] = 1;
-            setAtual.vencedor = gameAtual.vencedor;
-            partida.vencedor = checarFimDePartida(partida);
-        
-        } else if (gameAtual.isTiebreak) {
-            setAtual.placarGames[vencedorDoGameKey]++;
-            setAtual.vencedor = gameAtual.vencedor;
-            partida.vencedor = checarFimDePartida(partida);
-
-            if (!partida.vencedor) {
-                const setsVencidosA = partida.sets.filter(s => s.vencedor === playerAName).length;
-                const setsVencidosB = partida.sets.filter(s => s.vencedor === playerBName).length;
-                const setsParaVencer = Math.ceil(numSets / 2);
-                const isNextSetDeciding = (setsVencidosA === setsParaVencer - 1) && (setsVencidosB === setsParaVencer - 1);
-                const useSuperTiebreak = formatoSetDecisivo === 'supertiebreak' && isNextSetDeciding;
-                partida.sets.push(criarSet(partida, partida.sets.length + 1, useSuperTiebreak));
-            }
-
-        } else {
-            setAtual.placarGames[vencedorDoGameKey]++;
-            const resultadoSet = checarFimDeSet(setAtual, partida);
-
-            if (resultadoSet.vencedor) {
-                setAtual.vencedor = (resultadoSet.vencedor === 'player1') ? playerAName : playerBName;
-                partida.vencedor = checarFimDePartida(partida);
-
-                if (!partida.vencedor) {
-                    const setsVencidosA = partida.sets.filter(s => s.vencedor === playerAName).length;
-                    const setsVencidosB = partida.sets.filter(s => s.vencedor === playerBName).length;
-                    const setsParaVencer = Math.ceil(numSets / 2);
-                    const isNextSetDeciding = (setsVencidosA === setsParaVencer - 1) && (setsVencidosB === setsParaVencer - 1);
-                    const useSuperTiebreak = formatoSetDecisivo === 'supertiebreak' && isNextSetDeciding;
-                    partida.sets.push(criarSet(partida, partida.sets.length + 1, useSuperTiebreak));
-                }
-            } else if (resultadoSet.iniciarTiebreak) {
-                setAtual.games.push(criarGame(partida, true));
-            } else {
-                setAtual.games.push(criarGame(partida));
-            }
-        }
-        
         partida.updatedAt = new Date();
         await partida.save();
+
         const partidaObj = partida.toObject();
-        if (isChangeover) {
+        if (resultado.triggerChangeover) {
             partidaObj.triggerChangeoverModal = true;
-            partidaObj.triggeringGameId = gameAtual.gameId;
-            partidaObj.triggeringSetId = setAtual._id;
+            partidaObj.triggeringGameId = resultado.gameAtual.gameId;
+            partidaObj.triggeringSetId = resultado.setAtual._id;
         }
+
         res.status(200).json({ success: true, partida: partidaObj });
 
     } catch (err) {
@@ -224,6 +162,26 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
     }
 });
 
+app.post('/api/partida/:id/undo', async (req, res) => {
+    try {
+        const partidaId = req.params.id;
+        const estadoAnterior = undoBuffer.get(partidaId);
+
+        if (!estadoAnterior) {
+            return res.status(404).json({ success: false, message: 'Nenhum ponto para desfazer.' });
+        }
+
+        const partidaRestaurada = await Partida.findByIdAndUpdate(partidaId, estadoAnterior, { new: true, upsert: true });
+
+        undoBuffer.delete(partidaId);
+
+        res.status(200).json({ success: true, partida: partidaRestaurada });
+
+    } catch (err) {
+        console.error("Erro ao desfazer o ponto:", err);
+        res.status(500).json({ success: false, message: 'Erro ao desfazer o ponto.', error: err.message });
+    }
+});
 
 app.post('/api/partida/:partidaId/set/:setId/game/:gameId/changeover', async (req, res) => {
     try {
@@ -243,6 +201,7 @@ app.post('/api/partida/:partidaId/set/:setId/game/:gameId/changeover', async (re
         res.status(500).json({ success: false, message: 'Erro ao salvar dados da virada', error: error.message });
     }
 });
+
 app.post('/api/partida/:partidaId/set/:setId/comportamento', async (req, res) => {
     try {
         const { partidaId, setId } = req.params;
@@ -258,6 +217,7 @@ app.post('/api/partida/:partidaId/set/:setId/comportamento', async (req, res) =>
         res.status(500).json({ success: false, message: 'Erro ao salvar comportamento do set', error: error.message });
     }
 });
+
 app.post('/api/partida/:id/arbitragem', async (req, res) => {
     try {
         const { id } = req.params;
@@ -277,6 +237,7 @@ app.post('/api/partida/:id/arbitragem', async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro ao salvar registro de arbitragem', error: error.message });
     }
 });
+
 app.get('/api/partidas-list', async (req, res) => {
     try {
         const partidas = await Partida.find({}, { configuracao: 1, createdAt: 1, _id: 1 }).sort({ createdAt: -1 }).lean();
@@ -291,6 +252,7 @@ app.get('/api/partidas-list', async (req, res) => {
         res.status(500).json({ success: false, message: "Erro ao buscar a lista de partidas.", error: error.message });
     }
 });
+
 app.get('/api/partida/:id', async (req, res) => {
     try {
         const partida = await Partida.findById(req.params.id).lean();
@@ -301,166 +263,5 @@ app.get('/api/partida/:id', async (req, res) => {
     }
 });
 
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
-
-function formatarPlacarAtual(placarAtual, isTiebreak) {
-    const pontos = ["0", "15", "30", "40", "AD"];
-    const p1 = placarAtual.player1;
-    const p2 = placarAtual.player2;
-    if (isTiebreak) return { placarFormatado: `${p1}-${p2}` };
-    if (p1 >= 3 && p2 >= 3) {
-        if (p1 === p2) return { placarFormatado: "40-40" };
-        if (p1 > p2) return { placarFormatado: "AD-40" };
-        return { placarFormatado: "40-AD" };
-    }
-    return { placarFormatado: `${pontos[p1]}-${pontos[p2]}` };
-}
-
-function getProximoSacador(partida) {
-    const { playerAName, playerBName } = partida.configuracao;
-    const ultimoSet = partida.sets[partida.sets.length - 1];
-    
-    if (!ultimoSet || ultimoSet.games.length === 0) {
-        for (let i = partida.sets.length - 2; i >= 0; i--) {
-             const setAnterior = partida.sets[i];
-             if (setAnterior.games.length > 0) {
-                 const ultimoGameDoSetAnterior = setAnterior.games[setAnterior.games.length - 1];
-                 return ultimoGameDoSetAnterior.sacador === playerAName ? playerBName : playerAName;
-             }
-        }
-        return playerAName;
-    }
-
-    const ultimoGame = ultimoSet.games[ultimoSet.games.length - 1];
-    return ultimoGame.sacador === playerAName ? playerBName : playerAName;
-}
-
-
-// ### FUNÇÃO CORRIGIDA PARA O ERRO 'Cannot read properties of undefined (reading 'sacador')' ###
-function getSacadorTiebreak(gameAtual, partida) {
-    const { playerAName, playerBName } = partida.configuracao;
-    const totalPontos = gameAtual.placarGame.player1 + gameAtual.placarGame.player2;
-    const setAtual = partida.sets.find(s => s.games.some(g => g.gameId === gameAtual.gameId));
-
-    let primeiroSacadorDoTiebreak;
-
-    // Se for um Super Tie-break, o game é o único no set.
-    // Precisamos olhar o set anterior para determinar o sacador.
-    if (gameAtual.isSuperTiebreak) {
-        const indexSetAtual = partida.sets.findIndex(s => s._id === setAtual._id);
-        // Garante que há um set anterior
-        if (indexSetAtual > 0) {
-            const setAnterior = partida.sets[indexSetAtual - 1];
-            const ultimoGameDoSetAnterior = setAnterior.games[setAnterior.games.length - 1];
-            primeiroSacadorDoTiebreak = ultimoGameDoSetAnterior.sacador === playerAName ? playerBName : playerAName;
-        } else {
-            // Caso de borda muito raro (ex: partida de 1 set apenas que é um super tiebreak)
-            primeiroSacadorDoTiebreak = getProximoSacador(partida);
-        }
-    } else {
-        // Para um tie-break normal, o game anterior está no mesmo set.
-        const ultimoGameRegular = setAtual.games[setAtual.games.length - 2];
-        primeiroSacadorDoTiebreak = ultimoGameRegular.sacador === playerAName ? playerBName : playerAName;
-    }
-    
-    const oponente = primeiroSacadorDoTiebreak === playerAName ? playerBName : playerAName;
-
-    if (totalPontos === 0) return primeiroSacadorDoTiebreak;
-    
-    // A rotação de saque (1 ponto, depois de 2 em 2)
-    if ((totalPontos - 1) % 4 < 2) {
-         return oponente;
-    } else {
-         return primeiroSacadorDoTiebreak;
-    }
-}
-
-
-function criarGame(partida, isTiebreak = false, isSuperTiebreak = false) {
-    return {
-        gameId: uuidv4(),
-        placarGame: { player1: 0, player2: 0 },
-        sacador: getProximoSacador(partida),
-        isTiebreak,
-        isSuperTiebreak,
-        pontos: []
-    };
-}
-
-function criarSet(partida, numeroSet, isSuperTiebreak = false) {
-    let primeiroGame;
-    if (isSuperTiebreak) {
-        primeiroGame = criarGame(partida, true, true);
-    } else {
-        primeiroGame = criarGame(partida);
-    }
-    return { _id: uuidv4(), numero: numeroSet, placarGames: { player1: 0, player2: 0 }, games: [primeiroGame] };
-}
-
-function checarFimDeGame(game) {
-    const pA = game.placarGame.player1;
-    const pB = game.placarGame.player2;
-    if ((pA >= 4 || pB >= 4) && Math.abs(pA - pB) >= 2) {
-        return pA > pB ? 'player1' : 'player2';
-    }
-    return null;
-}
-
-function checarFimDeTiebreak(game) {
-    const pontosNecessarios = game.isSuperTiebreak ? 10 : 7;
-    const pA = game.placarGame.player1;
-    const pB = game.placarGame.player2;
-    if ((pA >= pontosNecessarios || pB >= pontosNecessarios) && Math.abs(pA - pB) >= 2) {
-        return pA > pB ? 'player1' : 'player2';
-    }
-    return null;
-}
-
-function checarFimDeSet(set, partida) { 
-    const { player1: gamesA, player2: gamesB } = set.placarGames;
-    const { configuracao, sets } = partida;
-    const { playerAName, playerBName, numSets, formatoSetDecisivo } = configuracao;
-
-    const setsParaVencer = Math.ceil(numSets / 2);
-    const setsVencidosA = sets.filter(s => s.vencedor === playerAName && s._id !== set._id).length;
-    const setsVencidosB = sets.filter(s => s.vencedor === playerBName && s._id !== set._id).length;
-    const isDecidingSet = (setsVencidosA === setsParaVencer - 1) && (setsVencidosB === setsParaVencer - 1);
-    
-    if (isDecidingSet && formatoSetDecisivo === 'vantagem') {
-        if (gamesA >= 6 && gamesA - gamesB >= 2) return { vencedor: 'player1' };
-        if (gamesB >= 6 && gamesB - gamesA >= 2) return { vencedor: 'player2' };
-        return {};
-    }
-
-    if (gamesA === 6 && gamesB === 6) {
-        return (isDecidingSet && formatoSetDecisivo === 'vantagem') ? {} : { iniciarTiebreak: true };
-    }
-    if (gamesA >= 6 && gamesA - gamesB >= 2) {
-        return { vencedor: 'player1' };
-    }
-    if (gamesB >= 6 && gamesB - gamesA >= 2) {
-        return { vencedor: 'player2' };
-    }
-    if (gamesA === 7 && gamesB === 6) {
-        return { vencedor: 'player1' };
-    }
-    if (gamesB === 7 && gamesA === 6) {
-        return { vencedor: 'player2' };
-    }
-    
-    return {};
-}
-
-function checarFimDePartida(partida) {
-    const { configuracao, sets } = partida;
-    const { playerAName, playerBName, numSets } = configuracao;
-    const setsParaVencer = Math.ceil(numSets / 2);
-    const setsA = sets.filter(s => s.vencedor === playerAName).length;
-    const setsB = sets.filter(s => s.vencedor === playerBName).length;
-
-    if (setsA >= setsParaVencer) return playerAName;
-    if (setsB >= setsParaVencer) return playerBName;
-    return null;
-}
