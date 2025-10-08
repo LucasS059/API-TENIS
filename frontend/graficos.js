@@ -55,8 +55,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function processRadarData(partidaData, categorias) {
         if (!partidaData || !Array.isArray(partidaData.sets) || !partidaData.configuracao) return [];
         const sentimentMap = { "Vibração positiva": "positivo", "Expressão equilibrada": "positivo", "Fair Play": "positivo", "Postura ereta": "positivo", "Relaxamento facial": "positivo", "Ativação corporal": "positivo", "Ir à toalha": "positivo", "Ritual pré-ponto": "positivo", "Respiração profunda": "positivo", "Hidratação consistente": "positivo", "Nutrição consistente": "positivo", "Suplementação consistente": "positivo", "Ritual de concentração": "positivo", "Troca de camiseta": "positivo", "Ir ao banheiro após ganhar": "positivo", "Decisão favorável": "positivo", "Consistentes": "positivo", "Equilibrado": "positivo", "Indiferença construtiva": "positivo", "Expressão (dentro das regras)": "positivo", "Sorrir com leveza": "positivo", "Foco visual na quadra": "positivo", "Extravasar (permitido)": "positivo", "Correção técnica (sombra)": "positivo", "Positivo": "positivo", "Ausência de correção verbal": "positivo", "Jogar raquete/xingar": "negativo", "Movimentos bruscos/depressivos": "negativo", "Discussão hostil": "negativo", "Postura caída": "negativo", "Tensão facial": "negativo", "Postura passiva": "negativo", "Demorar entre pontos": "negativo", "Trocar raquete de mão": "negativo", "Manter raquete na mão": "negativo", "Gestos de fraqueza": "negativo", "Respiração ofegante": "negativo", "Não trocar camiseta": "negativo", "Ir ao banheiro após perder": "negativo", "Decisão desfavorável": "negativo", "Ausência": "negativo", "Excessivos": "negativo", "Desatento": "negativo", "Acelerado": "negativo", "Apatia": "negativo", "Expressão (fora das regras)": "negativo", "Sorrir com ironia": "negativo", "Foco visual fora da quadra": "negativo", "Comportamento autolesivo": "negativo", "Ausência de correção": "negativo", "Negativo": "negativo", "Auto-correção negativa": "negativo" };
+        
+        // <<< NOVA FUNÇÃO INTERNA PARA DECIFRAR O SENTIMENTO >>>
+        function getSentiment(value) {
+            if (typeof value !== 'string') return null;
+            if (value.startsWith('[positivo]')) return 'positivo';
+            if (value.startsWith('[negativo]')) return 'negativo';
+            return sentimentMap[value]; // Usa o mapa antigo como fallback
+        }
+
         const positiveCounts = categorias.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
         const negativeCounts = categorias.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
+        
         partidaData.sets.forEach(set => {
             if (set.games) {
                 set.games.forEach(game => {
@@ -69,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const values = getPropertyCaseInsensitive(modal, key);
                                 if (values && Array.isArray(values)) {
                                     values.forEach(value => {
-                                        const sentiment = sentimentMap[value];
+                                        // <<< LÓGICA ATUALIZADA >>>
+                                        const sentiment = getSentiment(value);
                                         if (sentiment === "positivo") positiveCounts[cat]++;
                                         else if (sentiment === "negativo") negativeCounts[cat]++;
                                     });
@@ -81,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const valuesVirada = getPropertyCaseInsensitive(changeoverData, "viradaGame");
                     if (valuesVirada && Array.isArray(valuesVirada)) {
                         valuesVirada.forEach(value => {
-                            const sentiment = sentimentMap[value];
+                            // <<< LÓGICA ATUALIZADA >>>
+                            const sentiment = getSentiment(value);
                             if (sentiment === "positivo") positiveCounts["Comportamento na virada de lado"]++;
                             else if (sentiment === "negativo") negativeCounts["Comportamento na virada de lado"]++;
                         });
@@ -93,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const valuesSet = getPropertyCaseInsensitive(setEndData, keySet);
             if (valuesSet && Array.isArray(valuesSet)) {
                 valuesSet.forEach(value => {
-                    const sentiment = sentimentMap[value];
+                    // <<< LÓGICA ATUALIZADA >>>
+                    const sentiment = getSentiment(value);
                     if (sentiment === "positivo") positiveCounts["Comportamento após finalizar o SET"]++;
                     else if (sentiment === "negativo") negativeCounts["Comportamento após finalizar o SET"]++;
                 });
@@ -102,7 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (partidaData.arbitragens) {
             partidaData.arbitragens.forEach(arbitragem => {
                 const value = arbitragem.resultado;
-                const sentiment = sentimentMap[value];
+                // <<< LÓGICA ATUALIZADA >>>
+                const sentiment = getSentiment(value);
                 if (sentiment === "positivo") positiveCounts["Arbitragem"]++;
                 else if (sentiment === "negativo") negativeCounts["Arbitragem"]++;
             });
@@ -115,25 +129,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function RadarChart(id, data) {
-        // --- INÍCIO DA ALTERAÇÃO DE RESPONSIVIDADE ---
         const containerWidth = d3.select(id).node().getBoundingClientRect().width;
         const isMobile = containerWidth < 500;
-
-        // Define margens dinâmicas: menores para mobile, maiores para desktop
         const dynamicMargin = isMobile ? 
             { top: 50, right: 50, bottom: 50, left: 50 } : 
             radarChartConfig.margin;
-
         const cfg = {
             ...radarChartConfig,
             w: containerWidth - dynamicMargin.left - dynamicMargin.right,
             h: containerWidth - dynamicMargin.top - dynamicMargin.bottom,
-            margin: dynamicMargin, // Aplica a margem dinâmica
+            margin: dynamicMargin,
             wrapWidth: isMobile ? 60 : 80,
             labelFactor: isMobile ? 1.2 : 1.25, 
         };
-        // --- FIM DA ALTERAÇÃO DE RESPONSIVIDADE ---
-        
         d3.select(id).select("svg").remove();
         if (!data || data.length === 0 || !data[0].values.length || data[0].values.every(v => v.value === 0) && data[1].values.every(v => v.value === 0)) {
             d3.select(id).html('<div>Dados insuficientes para o gráfico de perfil</div>');
@@ -157,27 +165,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processPointsData(partidaData) {
-        if (!partidaData || !partidaData.sets) return { data: [], setBoundaries: [] };
+        if (!partidaData || !partidaData.sets) return { data: [], setBoundaries: [], gameBoundaries: [] };
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
         const combinedData = [];
         const setBoundaries = [];
+        const gameBoundaries = [];
         let totalPoints = 0;
+    
         partidaData.sets.forEach(set => {
             if (!set.games) return;
             set.games.forEach(game => {
                 let gamePointsA = 0;
                 let gamePointsB = 0;
                 if (!game.pontos) return;
-
+    
                 const isTiebreakGame = game.isTiebreak || game.isSuperTiebreak;
-
+    
                 game.pontos.forEach(ponto => {
                     totalPoints++;
                     if (ponto.vencedor === players[0]) gamePointsA++;
                     else if (ponto.vencedor === players[1]) gamePointsB++;
-
+    
                     let scoreA_display = 0, scoreB_display = 0;
-
+    
                     if (isTiebreakGame) {
                         scoreA_display = gamePointsA;
                         scoreB_display = gamePointsB;
@@ -201,48 +211,51 @@ document.addEventListener('DOMContentLoaded', () => {
                         isTiebreak: isTiebreakGame
                     });
                 });
+                if (game.pontos.length > 0) {
+                    gameBoundaries.push(totalPoints);
+                }
             });
             if (set.vencedor) { setBoundaries.push(totalPoints); }
         });
-        return { data: combinedData, setBoundaries };
+        return { data: combinedData, setBoundaries, gameBoundaries };
     }
 
     function PointsChart(id, partidaData) {
-        const { data, setBoundaries } = processPointsData(partidaData);
+        const { data, setBoundaries, gameBoundaries } = processPointsData(partidaData);
         if (!partidaData || !partidaData.configuracao) return;
         const players = [partidaData.configuracao.playerAName, partidaData.configuracao.playerBName];
-
+    
         if (!data || data.length === 0) {
             d3.select(id).html('<p>Dados insuficientes para gerar o gráfico de pontos.</p>');
             return;
         }
-
+    
         const maxTiebreakScore = d3.max(data, d => {
             return d.isTiebreak ? Math.abs(d.score) : 0;
         }) || 0;
-
+    
         const maxDomainY = Math.max(5, maxTiebreakScore);
-
+    
         const margin = { top: 40, right: 40, bottom: 40, left: 80 };
         const chartHeight = 500 - margin.top - margin.bottom;
         const totalPoints = data.length;
         
         const isMobile = window.innerWidth < 768;
-        const pointWidth = isMobile ? 25 : 40; // Pontos mais juntos no mobile
-
+        const pointWidth = isMobile ? 25 : 40;
+    
         const actualChartWidth = Math.max(800, totalPoints * pointWidth);
-
+    
         d3.select(id).html('');
         const containerDiv = d3.select(id).append("div").style("overflow-x", "auto").style("width", "100%");
         const svg = containerDiv.append("svg").attr("width", actualChartWidth + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
+    
         const x = d3.scaleLinear().range([0, actualChartWidth]).domain([0.5, totalPoints + 0.5]);
         const y = d3.scaleLinear().range([chartHeight, 0]).domain([-maxDomainY, maxDomainY]);
-
+    
         const yAxisLabels = { 0: '0', 1: '15', 2: '30', 3: '40', 4: 'Vantagem', 5: 'Game' };
         const yTickValues = d3.range(-maxDomainY, maxDomainY + 1).filter(d => d !== 0);
         yTickValues.push(0);
-
+    
         const customYTickFormat = d => {
             const absD = Math.abs(d);
             if (absD > 5) {
@@ -250,20 +263,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return yAxisLabels[absD] || '';
         };
-
+    
         svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
         svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(customYTickFormat));
         svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues(yTickValues.filter(d => d !== 0)).tickSize(-actualChartWidth).tickFormat(""));
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(maxDomainY - 1)).text(players[0]);
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-(maxDomainY - 1))).text(players[1]);
-
-        setBoundaries.forEach(boundary => {
-            svg.append("line").attr("class", "set-boundary").attr("x1", x(boundary + 0.5)).attr("y1", 0).attr("x2", x(boundary + 0.5)).attr("y2", chartHeight).style("stroke", "var(--primary-color)").style("stroke-width", "2px").style("stroke-dasharray", "5,5");
+    
+        gameBoundaries.forEach(boundary => {
+            svg.append("line")
+                .attr("class", "game-boundary")
+                .attr("x1", x(boundary + 0.5))
+                .attr("y1", 0)
+                .attr("x2", x(boundary + 0.5))
+                .attr("y2", chartHeight)
+                .style("stroke", "#cccccc")
+                .style("stroke-width", "1px")
+                .style("stroke-dasharray", "3,3");
         });
-
+    
+        setBoundaries.forEach(boundary => {
+            svg.append("line")
+                .attr("class", "set-boundary")
+                .attr("x1", x(boundary + 0.5))
+                .attr("y1", 0)
+                .attr("x2", x(boundary + 0.5))
+                .attr("y2", chartHeight)
+                .style("stroke", "var(--primary-color)")
+                .style("stroke-width", "2px")
+                .style("stroke-dasharray", "5,5");
+        });
+    
         const lineGenerator = d3.line().x(d => x(d.x)).y(d => y(d.score)).curve(d3.curveMonotoneX);
         svg.append("path").datum(data).attr("d", lineGenerator).style("fill", "none").style("stroke", "gray").style("stroke-width", 2);
-
+    
         const colorMap = { [players[0]]: "var(--player-a-color)", [players[1]]: "var(--player-b-color)" };
         svg.selectAll(".dot").data(data).enter().append("circle").attr("class", "dot").attr("cx", d => x(d.x)).attr("cy", d => y(d.score)).attr("r", 5).style("fill", d => colorMap[d.winner]);
     }

@@ -131,9 +131,9 @@ app.post('/api/partida/:id/ponto', async (req, res) => {
         undoBuffer.set(req.params.id, estadoAnterior);
 
         const { vencedor, modalRespostas } = req.body;
-        
+
         const resultado = processarPonto(partida, vencedor);
-        
+
         const { gameAtual } = resultado;
         gameAtual.pontos.push({
             pontoId: uuidv4(),
@@ -260,6 +260,25 @@ app.get('/api/partida/:id', async (req, res) => {
         else res.status(404).json({ success: false, message: "Partida não encontrada." });
     } catch (error) {
         res.status(500).json({ success: false, message: "Erro ao buscar a partida.", error: error.message });
+    }
+});
+
+app.delete('/api/partida/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const partidaDeletada = await Partida.findByIdAndDelete(id);
+
+        if (!partidaDeletada) {
+            return res.status(404).json({ success: false, message: 'Partida não encontrada.' });
+        }
+        
+        // Limpa o buffer de "desfazer" caso a partida exista lá
+        undoBuffer.delete(id);
+
+        res.json({ success: true, message: 'Partida deletada com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao deletar partida:', error);
+        res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
     }
 });
 

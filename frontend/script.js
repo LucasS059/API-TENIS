@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 if (body) options.body = JSON.stringify(body);
                 const response = await fetch(endpoint, options);
+                if (method === 'DELETE' && response.ok) {
+                    try {
+                        return await response.json();
+                    } catch (e) {
+                        return { success: true };
+                    }
+                }
                 if (!response.ok) {
                     throw new Error(`Erro de rede: ${response.status} ${response.statusText}`);
                 }
@@ -30,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return data;
             } catch (error) {
                 console.error("Falha na comunicação com a API:", error);
-                return null;
+                return { success: false, message: error.message };
             }
         },
         iniciarPartida: (config) => api.request('/api/partida', 'POST', { configuracao: config }),
@@ -38,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         registrarComportamentoSet: (partidaId, setId, data) => api.request(`/api/partida/${partidaId}/set/${setId}/comportamento`, 'POST', data),
         registrarArbitragem: (id, data) => api.request(`/api/partida/${id}/arbitragem`, 'POST', data),
         registrarComportamentoVirada: (partidaId, setId, gameId, data) => api.request(`/api/partida/${partidaId}/set/${setId}/game/${gameId}/changeover`, 'POST', data),
-        desfazerPonto: (id) => api.request(`/api/partida/${id}/undo`, 'POST')
+        desfazerPonto: (id) => api.request(`/api/partida/${id}/undo`, 'POST'),
+        cancelarPartida: (id) => api.request(`/api/partida/${id}`, 'DELETE')
     };
 
     const ui = {
@@ -49,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             arbitragemModal: new bootstrap.Modal('#arbitragemModal'),
             viradaModal: new bootstrap.Modal('#viradaModal'),
             vencedorModal: new bootstrap.Modal('#vencedorModal'),
+            confirmacaoCancelarModal: new bootstrap.Modal('#confirmacaoCancelarModal'),
             nomeVencedor: document.getElementById('nomeVencedor'),
             btnNovaPartida: document.getElementById('btnNovaPartida'),
             pontoModalTitle: document.getElementById('pontoModalTitle'),
@@ -65,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSalvarSet: document.getElementById('btnSalvarSet'),
             btnSalvarArbitragem: document.getElementById('btnSalvarArbitragem'),
             btnSalvarVirada: document.getElementById('btnSalvarVirada'),
+            btnConfirmarCancelamento: document.getElementById('btnConfirmarCancelamento'),
             placarDisplay: document.querySelector('.placar-display'),
             nomeJogadorA: document.getElementById('nomeJogadorA'),
             nomeJogadorB: document.getElementById('nomeJogadorB'),
@@ -105,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         resetarModal: (selector) => {
             document.querySelectorAll(`${selector} .active`).forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`${selector} .custom-option-wrapper`).forEach(el => el.remove());
         },
         alternarBotoesDePonto: (habilitar = true) => {
             ui.elements.btnPontoJogadorA.disabled = !habilitar;
@@ -152,12 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!valor) return;
                         const secaoDiv = document.querySelector(`#meuModal [data-secao="${secao}"]`);
                         if (!secaoDiv) return;
-                        let elementoAtivavel;
-                        if (secao === 'resultadoPonto') {
-                            elementoAtivavel = secaoDiv.querySelector(`.option-resultado[data-valor="${valor}"]`);
-                        } else {
-                            elementoAtivavel = secaoDiv.querySelector(`.btn[data-valor="${valor}"]`);
-                        }
+                        let elementoAtivavel = secaoDiv.querySelector(`[data-valor="${valor}"]`);
                         if (elementoAtivavel) elementoAtivavel.classList.add('active');
                     });
                 }
@@ -217,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.setIDParaComportamento = setFinalizadoPendente._id;
                 this.abrirModal(this.elements.setModal);
             }
-            
+
             const partidaEmAndamento = !partida.vencedor;
             btnArbitragem.disabled = !partidaEmAndamento;
             this.alternarBotoesDePonto(partidaEmAndamento);
@@ -241,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 this.elements.tbScoreA.textContent = String(placarA);
                 this.elements.tbScoreB.textContent = String(placarB);
-                
+
                 this.elements.btnPontoJogadorA.textContent = String(placarA);
                 this.elements.btnPontoJogadorB.textContent = String(placarB);
 
@@ -254,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.placarDisplay.style.display = 'grid';
                 document.getElementById('saqueJogadorA').textContent = (gameAtual.sacador === playerAName) ? ' 🎾' : '';
                 document.getElementById('saqueJogadorB').textContent = (gameAtual.sacador === playerBName) ? ' 🎾' : '';
-                
+
                 let scoreA_text, scoreB_text;
 
                 if (placarA >= 3 && placarB >= 3) {
@@ -302,31 +308,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 appState.lastLossAnswers = {};
                 ui.atualizarPlacar(appState.partida);
                 document.getElementById('saque-selector').style.display = 'flex';
-                
+
                 document.body.classList.add('in-match');
                 ui.elements.btnEncerrarPartida.onclick = () => {
-                    if (confirm('Tem certeza que deseja encerrar a partida atual? O progresso será perdido.')) {
-                        app.encerrarPartida();
-                    }
+                    ui.abrirModal(ui.elements.confirmacaoCancelarModal);
                 };
+
                 ui.elements.btnDesfazerPonto.disabled = true;
             }
         },
-        encerrarPartida() {
+
+        resetarParaNovaPartida() {
             appState.partida = null;
             appState.jogadorAtual = null;
-            
+
             ui.resetPlacarUI();
             ui.alternarBotoesDePonto(false);
             document.getElementById('saque-selector').style.display = 'none';
             ui.elements.jogadorAvaliadoDisplay.innerHTML = '';
-
             document.body.classList.remove('in-match');
-            ui.elements.btnEncerrarPartida.onclick = null; 
+            ui.elements.btnEncerrarPartida.onclick = null;
             ui.elements.btnDesfazerPonto.disabled = true;
-            
+
             ui.abrirModal(ui.elements.configModal);
         },
+
+        async encerrarPartida() {
+            if (!appState.partida) return;
+
+            try {
+                const partidaId = appState.partida._id;
+                const response = await api.cancelarPartida(partidaId);
+
+                if (response && response.success) {
+                    this.resetarParaNovaPartida();
+                    ui.mostrarConfirmacao('Partida cancelada com sucesso.');
+                } else {
+                    ui.mostrarConfirmacao(response.message || 'Erro ao cancelar a partida no servidor.');
+                }
+            } catch (error) {
+                console.error("Falha ao cancelar partida:", error);
+                ui.mostrarConfirmacao('Erro de comunicação ao cancelar a partida.');
+            }
+        },
+
         async registrarPonto() {
             if (!appState.partida || (appState.partida.vencedor && !appState.partida.sets.find(s => s.vencedor && !s.modalRespostasSet))) return;
             const pontoData = { vencedor: appState.jogadorAtual, modalRespostas: {} };
@@ -351,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.atualizarPlacar(appState.partida);
                 ui.resetarSelecaoSaque();
                 ui.elements.btnDesfazerPonto.disabled = false;
-                
+
                 if (response.partida.triggerChangeoverModal && !response.partida.vencedor) {
                     appState.triggeringGameId = response.partida.triggeringGameId;
                     appState.triggeringSetId = response.partida.triggeringSetId;
@@ -432,13 +457,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.fecharModal(ui.elements.arbitragemModal);
             }
         },
+
+        handleAddBehavior(addButton) {
+            const inputGroup = addButton.closest('.input-group');
+            const input = inputGroup.querySelector('.custom-behavior-input');
+            const behaviorText = input.value.trim();
+            if (!behaviorText) return;
+        
+            const sentiment = addButton.dataset.sentiment;
+            const section = addButton.closest('.modal-section');
+            const container = section.querySelector('.custom-options-container');
+            const dataValue = `[${sentiment}] ${behaviorText}`;
+        
+            const newOptionWrapper = document.createElement('div');
+            const firstButtonWrapper = section.querySelector('.row > div');
+            newOptionWrapper.className = firstButtonWrapper ? firstButtonWrapper.className : 'col-12';
+            newOptionWrapper.classList.add('custom-option-wrapper');
+            if (!newOptionWrapper.classList.contains('col')) {
+                 newOptionWrapper.style.padding = '0.25rem'; 
+            }
+        
+            const newButton = document.createElement('button');
+            newButton.className = 'btn btn-personalizado w-100 active';
+            newButton.dataset.valor = dataValue;
+            newButton.textContent = behaviorText;
+        
+            newOptionWrapper.appendChild(newButton);
+            container.appendChild(newOptionWrapper);
+        
+            input.value = '';
+        },
+
         init() {
             ui.alternarBotoesDePonto(false);
 
             ui.elements.configForm.addEventListener('submit', (e) => { e.preventDefault(); this.iniciarPartida(); });
+
             ui.elements.btnNovaPartida.addEventListener('click', () => {
                 ui.fecharModal(ui.elements.vencedorModal);
-                app.encerrarPartida();
+                this.resetarParaNovaPartida();
             });
 
             ['btnPontoJogadorA', 'btnPontoJogadorB'].forEach(id => {
@@ -468,11 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ui.elements.btnSalvarModal.addEventListener('click', () => { ui.fecharModal(ui.elements.pontoModal); this.registrarPonto(); });
             ui.elements.btnDesfazerPonto.addEventListener('click', () => this.desfazerPonto());
-
             ui.elements.btnSalvarSet.addEventListener('click', async () => {
                 ui.fecharModal(ui.elements.setModal);
-                await this.registrarComportamentoSet(); 
-
+                await this.registrarComportamentoSet();
                 if (appState.partida && appState.partida.vencedor) {
                     const algumSetPendente = appState.partida.sets.some(s => s.vencedor && !s.modalRespostasSet);
                     if (!algumSetPendente) {
@@ -481,36 +536,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-
             ui.elements.btnSalvarArbitragem.addEventListener('click', () => this.registrarArbitragem());
             ui.elements.btnSalvarVirada.addEventListener('click', () => this.registrarComportamentoVirada());
+            ui.elements.btnConfirmarCancelamento.addEventListener('click', () => {
+                ui.fecharModal(ui.elements.confirmacaoCancelarModal);
+                this.encerrarPartida();
+            });
 
-            document.querySelectorAll('.modal-section .btn, .option-resultado').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    const elementoClicado = e.currentTarget;
-                    if (elementoClicado.closest('.modal-footer') || elementoClicado.classList.contains('btn-close')) {
+            const modalsWithOptions = [
+                ui.elements.pontoModal._element,
+                ui.elements.viradaModal._element,
+                ui.elements.setModal._element,
+                ui.elements.arbitragemModal._element
+            ];
+            
+            modalsWithOptions.forEach(modalElement => {
+                if (!modalElement) return;
+            
+                modalElement.addEventListener('click', (e) => {
+                    const target = e.target;
+                    
+                    if (target.classList.contains('add-behavior-btn')) {
+                        this.handleAddBehavior(target);
                         return;
                     }
-
+            
+                    // ▼▼▼ LINHA CORRIGIDA ▼▼▼
+                    const elementoClicado = target.closest('[data-valor]');
+                    
+                    if (!elementoClicado || elementoClicado.closest('.input-group')) {
+                        return;
+                    }
+            
                     const secaoDiv = elementoClicado.closest('.modal-section');
                     if (!secaoDiv) return;
-
+            
                     const grupoPai = elementoClicado.closest('[data-group]');
                     const isMultiSelect = secaoDiv.dataset.multiselect === 'true' && !grupoPai;
                     const estavaAtivo = elementoClicado.classList.contains('active');
-
+            
                     if (grupoPai) {
-                        grupoPai.querySelectorAll('.active').forEach(activeEl => {
-                            if (activeEl !== elementoClicado) {
-                                activeEl.classList.remove('active');
-                            }
-                        });
+                        const outroBotao = grupoPai.querySelector('.active');
+                        if (outroBotao && outroBotao !== elementoClicado) {
+                            outroBotao.classList.remove('active');
+                        }
                         elementoClicado.classList.toggle('active');
+
                     } else if (isMultiSelect) {
                         elementoClicado.classList.toggle('active');
                     } else {
-                        secaoDiv.querySelectorAll('.active').forEach(activeEl => activeEl.classList.remove('active'));
-                        if (!estavaAtivo) {
+                        if (estavaAtivo) {
+                            elementoClicado.classList.remove('active');
+                        } else {
+                            secaoDiv.querySelectorAll('.active').forEach(activeEl => activeEl.classList.remove('active'));
                             elementoClicado.classList.add('active');
                         }
                     }
