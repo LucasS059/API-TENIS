@@ -115,7 +115,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function RadarChart(id, data) {
-        const cfg = radarChartConfig;
+        // --- INÍCIO DA ALTERAÇÃO DE RESPONSIVIDADE ---
+        const containerWidth = d3.select(id).node().getBoundingClientRect().width;
+        const isMobile = containerWidth < 500;
+
+        // Define margens dinâmicas: menores para mobile, maiores para desktop
+        const dynamicMargin = isMobile ? 
+            { top: 50, right: 50, bottom: 50, left: 50 } : 
+            radarChartConfig.margin;
+
+        const cfg = {
+            ...radarChartConfig,
+            w: containerWidth - dynamicMargin.left - dynamicMargin.right,
+            h: containerWidth - dynamicMargin.top - dynamicMargin.bottom,
+            margin: dynamicMargin, // Aplica a margem dinâmica
+            wrapWidth: isMobile ? 60 : 80,
+            labelFactor: isMobile ? 1.2 : 1.25, 
+        };
+        // --- FIM DA ALTERAÇÃO DE RESPONSIVIDADE ---
+        
         d3.select(id).select("svg").remove();
         if (!data || data.length === 0 || !data[0].values.length || data[0].values.every(v => v.value === 0) && data[1].values.every(v => v.value === 0)) {
             d3.select(id).html('<div>Dados insuficientes para o gráfico de perfil</div>');
@@ -129,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         axisGrid.selectAll(".levels").data(d3.range(1, cfg.levels + 1).reverse()).enter().append("circle").attr("class", "gridCircle").attr("r", d => radius / cfg.levels * d).style("fill", "#CDCDCD").style("stroke", "#CDCDCD").style("fill-opacity", cfg.opacityCircles);
         const axis = g.selectAll(".axis").data(allAxis).enter().append("g").attr("class", "axis");
         axis.append("line").attr("x1", 0).attr("y1", 0).attr("x2", (d, i) => rScale(cfg.maxValue * 1.1) * Math.cos(angleSlice * i - Math.PI / 2)).attr("y2", (d, i) => rScale(cfg.maxValue * 1.1) * Math.sin(angleSlice * i - Math.PI / 2)).style("stroke", "grey");
-        axis.append("text").attr("class", "legend").style("font-size", "11px").attr("text-anchor", "middle").attr("dy", "0.35em").attr("x", (d, i) => rScale(cfg.maxValue * cfg.labelFactor) * Math.cos(angleSlice * i - Math.PI / 2)).attr("y", (d, i) => rScale(cfg.maxValue * cfg.labelFactor) * Math.sin(angleSlice * i - Math.PI / 2)).text(d => d);
+        axis.append("text").attr("class", "legend").style("font-size", isMobile ? "9px" : "11px").attr("text-anchor", "middle").attr("dy", "0.35em").attr("x", (d, i) => rScale(cfg.maxValue * cfg.labelFactor) * Math.cos(angleSlice * i - Math.PI / 2)).attr("y", (d, i) => rScale(cfg.maxValue * cfg.labelFactor) * Math.sin(angleSlice * i - Math.PI / 2)).text(d => d);
         const radarLine = d3.lineRadial().curve(d3.curveCardinalClosed).radius(d => rScale(d.value)).angle((d, i) => i * angleSlice);
         const blobWrapper = g.selectAll(".radarWrapper").data(data).enter().append("g").attr("class", "radarWrapper");
         blobWrapper.append("path").attr("class", "radarArea").attr("d", d => radarLine(d.values)).style("fill", d => cfg.color(d.series)).style("fill-opacity", cfg.opacityArea)
@@ -180,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         x: totalPoints,
                         score: winnerIsPlayerA ? scoreA_display : -scoreB_display,
                         winner: ponto.vencedor,
-                        isTiebreak: isTiebreakGame // Adiciona a flag
+                        isTiebreak: isTiebreakGame
                     });
                 });
             });
@@ -208,7 +226,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const margin = { top: 40, right: 40, bottom: 40, left: 80 };
         const chartHeight = 500 - margin.top - margin.bottom;
         const totalPoints = data.length;
-        const pointWidth = 40;
+        
+        const isMobile = window.innerWidth < 768;
+        const pointWidth = isMobile ? 25 : 40; // Pontos mais juntos no mobile
+
         const actualChartWidth = Math.max(800, totalPoints * pointWidth);
 
         d3.select(id).html('');
@@ -216,11 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const svg = containerDiv.append("svg").attr("width", actualChartWidth + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
         const x = d3.scaleLinear().range([0, actualChartWidth]).domain([0.5, totalPoints + 0.5]);
-
         const y = d3.scaleLinear().range([chartHeight, 0]).domain([-maxDomainY, maxDomainY]);
 
         const yAxisLabels = { 0: '0', 1: '15', 2: '30', 3: '40', 4: 'Vantagem', 5: 'Game' };
-
         const yTickValues = d3.range(-maxDomainY, maxDomainY + 1).filter(d => d !== 0);
         yTickValues.push(0);
 
@@ -233,11 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         svg.append("g").attr("class", "x axis").attr("transform", `translate(0,${y(0)})`).call(d3.axisBottom(x).tickValues(d3.range(1, totalPoints + 1)).tickFormat(d3.format("d")));
-
         svg.append("g").attr("class", "y axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(customYTickFormat));
-
         svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickValues(yTickValues.filter(d => d !== 0)).tickSize(-actualChartWidth).tickFormat(""));
-
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(maxDomainY - 1)).text(players[0]);
         svg.append("text").attr("class", "player-label").attr("x", -10).attr("y", y(-(maxDomainY - 1))).text(players[1]);
 
@@ -280,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const resultadoArr = getPropertyCaseInsensitive(modal, 'resultadoPonto');
                     if (!resultadoArr || resultadoArr.length === 0 || !resultadoArr[0]) return;
-
                     const resultado = resultadoArr[0];
 
                     switch (resultado) {
@@ -293,17 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else stats[vencedor].winners++;
                             }
                             break;
-
                         case 'Unforced Error':
                         case 'Unforced Error (Oponente)':
                             if (perdedor) stats[perdedor].unforcedErrors++;
                             break;
-
                         case 'Forced Error':
                         case 'Forced Error (Oponente)':
                             if (perdedor) stats[perdedor].forcedErrors++;
                             break;
-
                         case 'Double Fault':
                         case 'Double Fault (Oponente)':
                             if (perdedor) stats[perdedor].doubleFaults++;
@@ -313,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tipoSaqueArr = getPropertyCaseInsensitive(modal, 'tipoSaque');
                     if (tipoSaqueArr && sacador) {
                         const tipoSaque = tipoSaqueArr[0];
-
                         if (resultado === 'Double Fault' || resultado === 'Double Fault (Oponente)') {
                             stats[sacador].firstServeAttempted++;
                             stats[sacador].secondServeAttempted++;
@@ -322,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             stats[sacador].firstServeAttempted++;
                             stats[sacador].firstServeMade++;
                         }
-
                         else if (tipoSaque === "Second Serve") {
                             stats[sacador].firstServeAttempted++;
                             stats[sacador].secondServeAttempted++;

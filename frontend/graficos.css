@@ -161,3 +161,76 @@ svg text {
     color: var(--primary-color);
     text-align: center;
 }
+/* ================================================= */
+/* RESPONSIVIDADE PARA CELULARES (VERSÃO CORRIGIDA)  */
+/* ================================================= */
+@media (max-width: 768px) {
+
+    /* 1. Ajusta o espaçamento do corpo para o novo header mais alto */
+    body {
+        padding-top: 135px; 
+    }
+
+    /* 2. Empilha os elementos do header verticalmente */
+    .header {
+        flex-direction: column;
+        align-items: center; /* Centraliza os blocos */
+        padding: 1rem;
+        gap: 1rem; /* Espaço entre o link "Voltar" e os controles */
+    }
+
+    /* 3. Garante que os controles ocupem toda a largura */
+    .controls-container {
+        width: 100%;
+        max-width: 400px; /* Limite para não ficar gigante em tablets */
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* 4. A CORREÇÃO PRINCIPAL: Faz o dropdown encolher e cortar o texto */
+    #partida-dropdown {
+        flex-grow: 1; /* Deixa ele preencher o espaço */
+        min-width: 0; /* TRUQUE: Permite que o item flexível encolha abaixo do seu conteúdo */
+        white-space: nowrap; /* Impede a quebra de linha do texto */
+        overflow: hidden; /* Esconde o texto que transborda */
+        text-overflow: ellipsis; /* Adiciona "..." ao final do texto cortado */
+    }
+
+    /* --- O resto dos ajustes (layout e gráficos) continua o mesmo --- */
+    
+    .main-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .grid-layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .grid-item {
+        padding: 0.8rem;
+        overflow: hidden;
+    }
+
+    .grid-item h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    #stats-chart-container {
+        overflow-x: auto;
+    }
+
+    .stats-table {
+        white-space: nowrap;
+    }
+
+    .stats-table th, .stats-table td {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    svg text, .tick text {
+        font-size: 10px;
+    }
+}
